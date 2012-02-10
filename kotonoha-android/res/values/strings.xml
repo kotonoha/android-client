@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Hello kotonoha-android!</string>
-    <string name="app_name">kotonoha-android</string>
+    <string name="app_name">Kotonoha</string>
+    <string name="preloading">Please wait, loading words from server.</string>
+    <string name="show_word">Show words</string>
+    <string name="load_words">Load words</string>
+    <string name="word_form_name">Words</string>
+    <string name="no_examples">No examples for this word</string>
+    <string name="next_word">Show next word</string>
+    <string name="voice_recognition_prompt">Recognize</string>
+    <string name="speak_button">Speak</string>
+    <string name="record_audio">Record</string>
+    <string name="voice_record_act_name">Voice recognition form</string>
 </resources>

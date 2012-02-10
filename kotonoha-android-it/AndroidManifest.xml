@@ -9,5 +9,8 @@
   <instrumentation android:targetPackage="org.eiennohito.kotonoha.android"
     android:name="android.test.InstrumentationTestRunner" />
 
+  <instrumentation android:targetPackage="org.eiennohito.kotonoha"
+                   android:name="android.test.InstrumentationTestRunner" />
+
 </manifest>
 

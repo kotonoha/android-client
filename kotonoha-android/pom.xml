@@ -29,7 +29,11 @@
       <artifactId>kotonoha-model</artifactId>
       <version>0.1-SNAPSHOT</version>
     </dependency>
-    <dependency></dependency>
+    <dependency>
+      <groupId>com.j256.ormlite</groupId>
+      <artifactId>ormlite-android</artifactId>
+      <version>4.33</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
