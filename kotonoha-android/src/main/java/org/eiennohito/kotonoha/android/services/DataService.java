@@ -26,21 +26,23 @@ import com.j256.ormlite.android.apptools.OrmLiteBaseService;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
 import org.eiennohito.kotonoha.model.converters.DateTimeTypeConverter;
+import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.joda.time.DateTime;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
@@ -155,7 +157,39 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
       }
     });
   }
-  
+
+  public void sendMarks(final List<MarkEvent> marks) {
+    URI uri = serviceUri.resolve("events/mark");
+    GsonBuilder gb = new GsonBuilder();
+    gb.registerTypeAdapter(DateTime.class, new DateTimeTypeConverter());
+    Gson gson = gb.create();
+    String json = gson.toJson(marks);
+    
+    HttpPost req = new HttpPost(uri);
+    StringEntity se;
+    try {
+      se = new StringEntity(json, "utf-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
+    se.setContentType("application/json");
+    req.setEntity(se);
+
+    executeHttpQuery(req, new ValueProcessor<HttpEntity, Integer>() {
+      public Integer process(HttpEntity val) throws Exception {
+        InputStreamReader isr = new InputStreamReader(val.getContent(), "UTF-8");
+        BufferedReader br = new BufferedReader(isr);
+        String s = br.readLine();
+        return Integer.parseInt(s);
+      }
+    }, new ValueCallback<Integer>() {
+      public void process(Integer val) {
+        loadWordsAsync(WordsLoadedCallback.EMPTY);
+        markSvc.removeMarks(marks);
+      }
+    });
+  }
+
   interface ValueProcessor<T, F> {
     F process(final T val) throws Exception;
   } 

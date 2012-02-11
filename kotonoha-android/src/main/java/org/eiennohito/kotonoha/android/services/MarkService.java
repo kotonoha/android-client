@@ -15,10 +15,16 @@
  */
 package org.eiennohito.kotonoha.android.services;
 
+import android.util.Log;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
+import com.j256.ormlite.stmt.PreparedUpdate;
+import com.j256.ormlite.stmt.UpdateBuilder;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.joda.time.DateTime;
+
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * @author eiennohito
@@ -26,9 +32,11 @@ import org.joda.time.DateTime;
  */
 public class MarkService {
   private DataService service;
+  private final RuntimeExceptionDao<MarkEvent,Long> markDao;
 
   public MarkService(DataService service) {
     this.service = service;
+    markDao = this.service.getHelper().getMarkEventDao();
   }
 
   public void addMark(WordCard card, double mark, double time) {
@@ -38,12 +46,36 @@ public class MarkService {
     ev.setMark(mark);
     ev.setTime(time);
     ev.setMode(card.getCardMode());
+    ev.setOperation(0);
 
-    RuntimeExceptionDao<MarkEvent,Long> med = service.getHelper().getMarkEventDao();
-    med.create(ev);
+    markDao.create(ev);
   }
 
   public void submit() {
-    //To change body of created methods use File | Settings | File Templates.
+    try {
+      UpdateBuilder<MarkEvent,Long> ub = markDao.updateBuilder();
+      ub.where().eq("operation", 0);
+      ub.updateColumnValue("operation", 1);
+      PreparedUpdate<MarkEvent> pu = ub.prepare();
+      markDao.update(pu);
+    } catch (SQLException e) {
+      Log.e("Kotonoha", "Error updating marks for submit", e);
+    }
+    
+    service.defaultScheduler.schedule(new Runnable() {
+      public void run() {
+        List<MarkEvent> marks = loadReadyMarks();
+        service.sendMarks(marks);
+      }
+    });
+  }
+
+  private List<MarkEvent> loadReadyMarks() {
+    List<MarkEvent> marks = markDao.queryForEq("operation", 1);
+    return marks;
+  }
+
+  public void removeMarks(List<MarkEvent> marks) {
+    markDao.delete(marks);
   }
 }
