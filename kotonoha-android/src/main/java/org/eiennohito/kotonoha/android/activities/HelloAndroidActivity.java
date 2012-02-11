@@ -1,8 +1,9 @@
-package org.eiennohito.kotonoha.android;
+package org.eiennohito.kotonoha.android.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
 import de.akquinet.android.androlog.Log;
+import org.eiennohito.kotonoha.android.R;
 
 public class HelloAndroidActivity extends Activity {
 

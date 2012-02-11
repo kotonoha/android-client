@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.eiennohito.kotonoha.android;
+package org.eiennohito.kotonoha.android.util;
 
 /**
  * @author eiennohito
@@ -21,4 +21,9 @@ package org.eiennohito.kotonoha.android;
  */
 public interface WordsLoadedCallback {
   void wordsLoaded(boolean success);
+
+  final static WordsLoadedCallback EMPTY = new WordsLoadedCallback() {
+    public void wordsLoaded(boolean success) {
+    }
+  };
 }

@@ -1,7 +1,7 @@
 package org.eiennohito.kotonoha.android.test;
 
 import android.test.ActivityInstrumentationTestCase2;
-import org.eiennohito.kotonoha.android.*;
+import org.eiennohito.kotonoha.android.activities.HelloAndroidActivity;
 
 public class HelloAndroidActivityTest extends ActivityInstrumentationTestCase2<HelloAndroidActivity> {
 

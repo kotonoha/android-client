@@ -1,4 +1,4 @@
-package org.eiennohito.kotonoha.android;
+package org.eiennohito.kotonoha.android.util;
 
 import org.eiennohito.kotonoha.model.learning.WordCard;
 

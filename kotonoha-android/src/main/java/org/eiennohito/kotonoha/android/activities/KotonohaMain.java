@@ -1,4 +1,4 @@
-package org.eiennohito.kotonoha.android;
+package org.eiennohito.kotonoha.android.activities;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.TextView;
+import org.eiennohito.kotonoha.android.R;
+import org.eiennohito.kotonoha.android.services.DataService;
+import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
 import org.eiennohito.kotonoha.android.voice.VoiceRecognition;
 
 public class KotonohaMain extends Activity {

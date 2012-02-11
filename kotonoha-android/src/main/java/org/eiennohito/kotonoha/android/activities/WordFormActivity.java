@@ -1,4 +1,4 @@
-package org.eiennohito.kotonoha.android;
+package org.eiennohito.kotonoha.android.activities;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -9,8 +9,12 @@ import android.os.IBinder;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
+import org.eiennohito.kotonoha.android.R;
+import org.eiennohito.kotonoha.android.services.DataService;
+import org.eiennohito.kotonoha.android.transfer.WordWithCard;
 import org.eiennohito.kotonoha.model.learning.Example;
 import org.eiennohito.kotonoha.model.learning.Word;
+import org.eiennohito.kotonoha.model.learning.WordCard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +136,7 @@ public class WordFormActivity extends Activity {
   }
 
   private Word currentWord;
+  private WordCard currentCard;
   private int exampleIndex;
   private List<Example> examples;
   private long wordMapTime;
@@ -194,7 +199,7 @@ public class WordFormActivity extends Activity {
     }
 
     public void onClick(View v) {
-      service.markWord(currentWord, mark, calcTime());
+      service.markWord(currentCard, mark, calcTime());
       //massSetVisibility(ALL_ELEMS, View.VISIBLE);
       showNextWordBtn();
       state = WordFormState.View;
@@ -214,8 +219,10 @@ public class WordFormActivity extends Activity {
   private Random rand = new Random();
 
   private void nextWord() {
-    if (service.hasNextWord() || service.preloadWords()) {
-      currentWord = service.getNextWord();
+    if (service.hasNextCard() || service.preloadWords()) {
+      WordWithCard wc = service.getNextWord();
+      currentWord = wc.word;
+      currentCard = wc.card;
       mapCurrentWord();
       //massSetVisibility(MARK_BTNS, View.VISIBLE);
       int viewId = rand.nextBoolean() ? R.id.Reading : R.id.Writing;
