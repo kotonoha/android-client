@@ -83,4 +83,11 @@ public class KotonohaMain extends Activity {
     bindService(new Intent(this, DataService.class), connection, BIND_AUTO_CREATE);
   }
 
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    if (service != null) {
+      unbindService(connection);
+    }
+  }
 }

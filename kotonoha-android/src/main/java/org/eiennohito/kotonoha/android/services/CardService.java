@@ -15,14 +15,15 @@
  */
 package org.eiennohito.kotonoha.android.services;
 
-import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.util.ScheduledWordComparator;
+import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeSet;
 
 /**
@@ -48,16 +49,9 @@ public class CardService {
   }
 
   private TreeSet<WordCard> loadCards() {
-    CloseableIterator<WordCard> it = cardDao.iterator();
+    List<WordCard> cards = cardDao.queryForEq("status", 0);
     TreeSet<WordCard> set = emptySet();
-    while (it.hasNext()) {
-      set.add(it.next());
-    }
-    try {
-      it.close();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    set.addAll(cards);
     return set;
   }
 
@@ -69,12 +63,21 @@ public class CardService {
 
   public WordCard nextCard() {
     synchronized (syncRoot) {
-      return cards.pollFirst();
+      final WordCard card = cards.pollFirst();
+      card.setStatus(1);
+      dataService.defaultScheduler.schedule(new Runnable() {
+        public void run() {
+          cardDao.update(card);
+        }
+      });
+      return card;
     }
   }
 
   public void process(Collection<WordCard> crds) {
+   
     for (WordCard card: crds) {
+      card.setStatus(0);
       cardDao.createIfNotExists(card);
     }
     reloadCards();
@@ -89,5 +92,23 @@ public class CardService {
         }
       }
     });
+  }
+
+  public int countPresent() {
+    synchronized (syncRoot) {
+      return cards.size();
+    }
+  }
+
+  public void removeCardsFor(List<MarkEvent> marks) {
+    List<Long> ids = new ArrayList<Long>(marks.size());
+    for (MarkEvent e: marks) {
+      ids.add(e.getCard());
+    }
+    cardDao.deleteIds(ids);
+  }
+
+  public void clear() {
+    cardDao.updateRaw("delete from wordcard where id not in (select e.id from markevent e where e.operation <> 0) and status <> 0");
   }
 }

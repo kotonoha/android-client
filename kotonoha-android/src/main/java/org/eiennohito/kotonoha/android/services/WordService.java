@@ -86,4 +86,8 @@ public class WordService {
     }
     
   }
+
+  public void clear() {
+    wordDao.updateRaw("delete from word where id not in (select c.word from wordcard c)");
+  }
 }

@@ -17,6 +17,8 @@ package org.eiennohito.kotonoha.android.services;
 
 import android.util.Log;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
+import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.PreparedDelete;
 import com.j256.ormlite.stmt.PreparedUpdate;
 import com.j256.ormlite.stmt.UpdateBuilder;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
@@ -24,6 +26,7 @@ import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.joda.time.DateTime;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -72,10 +75,35 @@ public class MarkService {
 
   private List<MarkEvent> loadReadyMarks() {
     List<MarkEvent> marks = markDao.queryForEq("operation", 1);
+    List<Long> ids = new ArrayList<Long>();
+    for (MarkEvent m : marks) {
+      ids.add(m.getId());
+    }
+      
+    try {
+      UpdateBuilder<MarkEvent,Long> ub = markDao.updateBuilder();
+      ub.where().in("id", ids);
+      ub.updateColumnValue("operation", 2);
+      PreparedUpdate<MarkEvent> pu = ub.prepare();
+      markDao.update(pu);
+    } catch (SQLException e) {
+      Log.e("Kotonoha", "Error while marking updating marks", e);
+    }
     return marks;
   }
 
   public void removeMarks(List<MarkEvent> marks) {
     markDao.delete(marks);
+  }
+
+  public void clear() {
+    try {
+      DeleteBuilder<MarkEvent,Long> db = markDao.deleteBuilder();
+      db.where().ne("operation", 0);
+      PreparedDelete<MarkEvent> pq = db.prepare();
+      markDao.delete(pq);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

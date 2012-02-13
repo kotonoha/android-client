@@ -29,8 +29,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.params.HttpConnectionParams;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
+import org.eiennohito.kotonoha.android.db.Values;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
+import org.eiennohito.kotonoha.android.util.AddressUtil;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
 import org.eiennohito.kotonoha.model.converters.DateTimeTypeConverter;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
@@ -39,23 +42,26 @@ import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.joda.time.DateTime;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author eiennohito
  * @since 10.02.12
  */
 public class DataService extends OrmLiteBaseService<DatabaseHelper> {
-  
-  public final static URI serviceUri = URI.create("http://kotonoha.weaboo.net/api");
+  public final static URI serviceUri = URI.create(AddressUtil.baseUri);
 
-  MarkService markSvc = new MarkService(this);
-  CardService cardSvc = new CardService(this);
-  WordService wordSvc = new WordService(this);
+  MarkService markSvc;
+  CardService cardSvc;
+  WordService wordSvc;
 
   /**
    * All web service calls should be done through this scheduler.
@@ -63,11 +69,45 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public final Scheduler webScheduler = new Scheduler(1, 1);
   public final Scheduler defaultScheduler = new Scheduler(1, 5);
   public final ScheduledThreadPoolExecutor timerSc = new ScheduledThreadPoolExecutor(2);
-  AndroidHttpClient httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0", DataService.this);
+  AndroidHttpClient httpClient;
+
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0");
+    
+    HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 5000);
+    HttpConnectionParams.setSoTimeout(httpClient.getParams(), 10000);
+
+    
+    markSvc = new MarkService(this);
+    cardSvc = new CardService(this);
+    wordSvc = new WordService(this);
+
+    markSvc.clear();
+    cardSvc.clear();
+    wordSvc.clear();
+  }
 
   public void markWord(WordCard card, double mark, double time) {
     markSvc.addMark(card, mark, time);
     wordSvc.prune(card.getWord());
+    defaultScheduler.schedule(new Runnable() {
+      public void run() {
+        checkGetNewWords();
+      }
+    });
+  }
+
+  private int callCount = 0;
+  private void checkGetNewWords() {
+    if (++callCount % 4 == 0) {
+      pushSubmitMarks();
+    }
+    int cnt = cardSvc.countPresent();
+    if (cnt < 9) {
+      loadWordsAsync(WordsLoadedCallback.EMPTY);
+    }
   }
 
   public boolean hasNextCard() {
@@ -89,12 +129,20 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     markSvc.submit();
   }
 
+  
+  private AtomicBoolean areWordsLoading = new AtomicBoolean(false);
+  
   public void loadWordsAsync(final WordsLoadedCallback callback) {
-    URI uri = serviceUri.resolve("words/scheduled/15");
+    if (areWordsLoading.get()) {
+      return;
+    }
+    areWordsLoading.set(true);
+    URI uri = serviceUri.resolve("words/scheduled/20");
     HttpUriRequest req = new HttpGet(uri);
     executeHttpQuery(req, new GsonObjectParser<Container>(Container.class), 
       new ValueCallback<Container>() {
         public void process(Container val) {
+          areWordsLoading.set(false);
           if (val == null) {
             callback.wordsLoaded(false);
           } else {
@@ -175,17 +223,13 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     se.setContentType("application/json");
     req.setEntity(se);
 
-    executeHttpQuery(req, new ValueProcessor<HttpEntity, Integer>() {
-      public Integer process(HttpEntity val) throws Exception {
-        InputStreamReader isr = new InputStreamReader(val.getContent(), "UTF-8");
-        BufferedReader br = new BufferedReader(isr);
-        String s = br.readLine();
-        return Integer.parseInt(s);
-      }
-    }, new ValueCallback<Integer>() {
-      public void process(Integer val) {
-        loadWordsAsync(WordsLoadedCallback.EMPTY);
-        markSvc.removeMarks(marks);
+    executeHttpQuery(req, new GsonObjectParser<Values>(Values.class),
+    new ValueCallback<Values>() {
+      public void process(Values val) {
+        if (val != null) {
+          markSvc.removeMarks(marks);
+          cardSvc.removeCardsFor(marks);
+        }
       }
     });
   }
@@ -236,5 +280,6 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     timerSc.shutdown();
     webScheduler.shutdown();
     defaultScheduler.shutdown();
+    httpClient.close();
   }
 }
