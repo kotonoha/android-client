@@ -105,6 +105,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
       pushSubmitMarks();
     }
     int cnt = cardSvc.countPresent();
+    Log.d("Kotonoha", String.format("it's %d cards now", cnt));
     if (cnt < 9) {
       loadWordsAsync(WordsLoadedCallback.EMPTY);
     }
@@ -122,7 +123,15 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public WordWithCard getNextWord() {
     WordCard card = cardSvc.nextCard();
     Word word = wordSvc.wordForCard(card.getWord());
-    return new WordWithCard(word, card);
+    return checkWnC(new WordWithCard(word, card));
+  }
+
+  private WordWithCard checkWnC(WordWithCard wc) {
+    if (wc.word != null) {
+      return wc;
+    }
+    cardSvc.drop(wc.card);
+    return getNextWord();
   }
 
   public void pushSubmitMarks() {

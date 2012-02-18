@@ -75,6 +75,14 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     return createDaoForClass(MarkEvent.class);
   }
 
+  public RuntimeExceptionDao<Example, Long> getExampleDao() {
+    return createDaoForClass(Example.class);
+  }
+
+  public RuntimeExceptionDao<ItemLearning, Long> getLearningDao() {
+    return createDaoForClass(ItemLearning.class);
+  }
+
   public <T, X> RuntimeExceptionDao<T, X> createDaoForClass(Class<T> clazz) {
     try {
       return RuntimeExceptionDao.createDao(connectionSource, clazz);

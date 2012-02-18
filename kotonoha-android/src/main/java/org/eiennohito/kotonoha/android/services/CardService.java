@@ -16,15 +16,17 @@
 package org.eiennohito.kotonoha.android.services;
 
 import com.j256.ormlite.dao.RuntimeExceptionDao;
+import com.j256.ormlite.stmt.DeleteBuilder;
+import com.j256.ormlite.stmt.PreparedDelete;
+import com.j256.ormlite.stmt.QueryBuilder;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.util.ScheduledWordComparator;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
+import org.eiennohito.kotonoha.model.learning.ItemLearning;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.TreeSet;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * @author eiennohito
@@ -35,6 +37,7 @@ public class CardService {
   private final DataService dataService;
   private final RuntimeExceptionDao<WordCard,Long> cardDao;
   private TreeSet<WordCard> cards;
+  private final RuntimeExceptionDao<ItemLearning,Long> learningDao;
 
 
   private static TreeSet<WordCard> emptySet() {
@@ -46,6 +49,7 @@ public class CardService {
     DatabaseHelper helper = dataService.getHelper();
     cardDao = helper.getWordCardDao();
     cards = loadCards();
+    learningDao = helper.getLearningDao();
   }
 
   private TreeSet<WordCard> loadCards() {
@@ -75,9 +79,12 @@ public class CardService {
   }
 
   public void process(Collection<WordCard> crds) {
-   
     for (WordCard card: crds) {
       card.setStatus(0);
+      ItemLearning l = card.getLearning();
+//      if (l != null) {
+//        learningDao.create(l);
+//      }
       cardDao.createIfNotExists(card);
     }
     reloadCards();
@@ -96,7 +103,8 @@ public class CardService {
 
   public int countPresent() {
     synchronized (syncRoot) {
-      return cards.size();
+      int size = cards.size();
+      return size;
     }
   }
 
@@ -105,10 +113,37 @@ public class CardService {
     for (MarkEvent e: marks) {
       ids.add(e.getCard());
     }
+    dropCardsByIds(ids);
+  }
+
+  private void dropCardsByIds(Collection<Long> ids) {
+    removeLearningForCards(ids);
     cardDao.deleteIds(ids);
+  }
+
+  private void removeLearningForCards(Collection<Long> ids) {
+    //"delete from itemlearning where id in (select w.learning from wordcard w where w.id in (...))"
+    try {
+      QueryBuilder<WordCard,Long> cb = cardDao.queryBuilder();
+      cb.selectColumns("learning_id");
+      cb.where().in("id", ids);
+      DeleteBuilder<ItemLearning,Long> db = learningDao.deleteBuilder();
+      db.where().in("id", cb);
+      PreparedDelete<ItemLearning> q = db.prepare();
+      learningDao.delete(q);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void clear() {
     cardDao.updateRaw("delete from wordcard where id not in (select e.id from markevent e where e.operation <> 0) and status <> 0");
+    learningDao.updateRaw("delete from itemlearning where id not in (select c.id from wordcard c)");
+  }
+
+  public void drop(WordCard card) {
+    ArrayList<Long> ids = new ArrayList<Long>();
+    ids.add(card.getId());
+    dropCardsByIds(ids);
   }
 }

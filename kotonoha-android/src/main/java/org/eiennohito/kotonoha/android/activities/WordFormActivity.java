@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
@@ -221,6 +222,10 @@ public class WordFormActivity extends Activity {
   private void nextWord() {
     if (service.hasNextCard() || service.preloadWords()) {
       WordWithCard wc = service.getNextWord();
+      if (wc == null) {
+        Log.w("Kotonoha", "Returned nothing, closing an activity");
+        finish();
+      }
       currentWord = wc.word;
       currentCard = wc.card;
       mapCurrentWord();

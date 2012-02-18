@@ -12,7 +12,8 @@ import java.util.Comparator;
 public class ScheduledWordComparator implements Comparator<WordCard> {
     public int compare(WordCard w1, WordCard w2) {
         if (w1.getLearning() == null && w2.getLearning() == null) {
-            return w1.getCreatedOn().compareTo(w2.getCreatedOn());
+          int i = w1.getCreatedOn().compareTo(w2.getCreatedOn());
+          return i == 0 ? (int)(w1.getId() - w2.getId()) : i;
         }
         if (w1.getLearning() == null) {
             return 1;

@@ -17,6 +17,8 @@ package org.eiennohito.kotonoha.android.services;
 
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
+import org.eiennohito.kotonoha.android.db.DatabaseHelper;
+import org.eiennohito.kotonoha.model.learning.Example;
 import org.eiennohito.kotonoha.model.learning.Word;
 
 import java.sql.SQLException;
@@ -32,10 +34,13 @@ public class WordService {
   private final RuntimeExceptionDao<Word,Long> wordDao;
   private HashMap<Long, Word> cache = new HashMap<Long, Word>();
   private final Object syncRoot = new Object();
+  private final RuntimeExceptionDao<Example,Long> exampleDao;
 
   public WordService(DataService dataService) {
     this.dataService = dataService;
-    wordDao = dataService.getHelper().getWordDao();
+    DatabaseHelper helper = dataService.getHelper();
+    wordDao = helper.getWordDao();
+    exampleDao = helper.getExampleDao();
     loadWordsFromDb();
   }
 
@@ -71,6 +76,7 @@ public class WordService {
   }
 
   private void deleteFromDb(long id) {
+    exampleDao.updateRaw("delete from example where word_id = ?", Long.toString(id));
     wordDao.deleteById(id);
   }
 
@@ -82,6 +88,13 @@ public class WordService {
     }
 
     for (Word w: words) {
+      Collection<Example> exs = w.getExamples();
+      if (exs != null) {
+        for (Example ex : exs) {
+          ex.setWord(w);
+          exampleDao.create(ex);
+        }
+      }
       wordDao.createIfNotExists(w);
     }
     
@@ -89,5 +102,6 @@ public class WordService {
 
   public void clear() {
     wordDao.updateRaw("delete from word where id not in (select c.word from wordcard c)");
+    exampleDao.updateRaw("delete from example where word_id not in (select w.id from word w)");
   }
 }
