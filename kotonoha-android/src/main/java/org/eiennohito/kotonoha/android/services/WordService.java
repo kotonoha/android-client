@@ -41,6 +41,7 @@ public class WordService {
     DatabaseHelper helper = dataService.getHelper();
     wordDao = helper.getWordDao();
     exampleDao = helper.getExampleDao();
+    clear();
     loadWordsFromDb();
   }
 

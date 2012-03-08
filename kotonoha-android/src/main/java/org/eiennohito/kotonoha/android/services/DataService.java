@@ -77,16 +77,12 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0");
     
     HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 5000);
-    HttpConnectionParams.setSoTimeout(httpClient.getParams(), 10000);
+    HttpConnectionParams.setSoTimeout(httpClient.getParams(), 20000);
 
     
     markSvc = new MarkService(this);
     cardSvc = new CardService(this);
     wordSvc = new WordService(this);
-
-    markSvc.clear();
-    cardSvc.clear();
-    wordSvc.clear();
   }
 
   public void markWord(WordCard card, double mark, double time) {
@@ -122,6 +118,9 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   public WordWithCard getNextWord() {
     WordCard card = cardSvc.nextCard();
+    if (card == null) {
+      return null;
+    }
     Word word = wordSvc.wordForCard(card.getWord());
     return checkWnC(new WordWithCard(word, card));
   }

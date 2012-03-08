@@ -40,6 +40,7 @@ public class MarkService {
   public MarkService(DataService service) {
     this.service = service;
     markDao = this.service.getHelper().getMarkEventDao();
+    this.clear();
   }
 
   public void addMark(WordCard card, double mark, double time) {

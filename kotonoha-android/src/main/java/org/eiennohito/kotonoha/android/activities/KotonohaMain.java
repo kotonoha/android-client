@@ -48,8 +48,12 @@ public class KotonohaMain extends Activity {
 
 
   private WordsLoadedCallback wordsLoadedCallback = new WordsLoadedCallback() {
-    public void wordsLoaded(boolean success) {
-      handleLoadWords(success);
+    public void wordsLoaded(final boolean success) {
+      runOnUiThread(new Runnable() {
+        public void run() {
+          handleLoadWords(success);
+        }
+      });
     }
   };
 

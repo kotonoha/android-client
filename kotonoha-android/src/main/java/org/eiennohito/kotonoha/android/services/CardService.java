@@ -48,8 +48,9 @@ public class CardService {
     this.dataService = dataService;
     DatabaseHelper helper = dataService.getHelper();
     cardDao = helper.getWordCardDao();
-    cards = loadCards();
     learningDao = helper.getLearningDao();
+    clear();
+    cards = loadCards();
   }
 
   private TreeSet<WordCard> loadCards() {
@@ -68,6 +69,9 @@ public class CardService {
   public WordCard nextCard() {
     synchronized (syncRoot) {
       final WordCard card = cards.pollFirst();
+      if (card == null) {
+        return null;
+      }
       card.setStatus(1);
       dataService.defaultScheduler.schedule(new Runnable() {
         public void run() {
