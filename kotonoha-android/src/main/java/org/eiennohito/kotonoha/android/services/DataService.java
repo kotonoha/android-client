@@ -20,37 +20,23 @@ import android.net.http.AndroidHttpClient;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.j256.ormlite.android.apptools.OrmLiteBaseService;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.params.HttpConnectionParams;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.db.Values;
+import org.eiennohito.kotonoha.android.rest.request.GetScheduledCards;
+import org.eiennohito.kotonoha.android.rest.request.PostMarkEvents;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
 import org.eiennohito.kotonoha.android.util.AddressUtil;
+import org.eiennohito.kotonoha.android.util.ValueCallback;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
-import org.eiennohito.kotonoha.model.converters.DateTimeTypeConverter;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
-import org.joda.time.DateTime;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.util.List;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author eiennohito
@@ -66,9 +52,6 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   /**
    * All web service calls should be done through this scheduler.
    */
-  public final Scheduler webScheduler = new Scheduler(1, 1);
-  public final Scheduler defaultScheduler = new Scheduler(1, 5);
-  public final ScheduledThreadPoolExecutor timerSc = new ScheduledThreadPoolExecutor(2);
   AndroidHttpClient httpClient;
 
   @Override
@@ -79,7 +62,6 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 5000);
     HttpConnectionParams.setSoTimeout(httpClient.getParams(), 20000);
 
-    
     markSvc = new MarkService(this);
     cardSvc = new CardService(this);
     wordSvc = new WordService(this);
@@ -88,7 +70,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public void markWord(WordCard card, double mark, double time) {
     markSvc.addMark(card, mark, time);
     wordSvc.prune(card.getWord());
-    defaultScheduler.schedule(new Runnable() {
+    Scheduler.schedule(new Runnable() {
       public void run() {
         checkGetNewWords();
       }
@@ -102,7 +84,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     }
     int cnt = cardSvc.countPresent();
     Log.d("Kotonoha", String.format("it's %d cards now", cnt));
-    if (cnt < 9) {
+    if (cnt < 14) {
       loadWordsAsync(WordsLoadedCallback.EMPTY);
     }
   }
@@ -138,27 +120,21 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   }
 
   
-  private AtomicBoolean areWordsLoading = new AtomicBoolean(false);
-  
   public void loadWordsAsync(final WordsLoadedCallback callback) {
-    if (areWordsLoading.get()) {
-      return;
-    }
-    areWordsLoading.set(true);
-    URI uri = serviceUri.resolve("words/scheduled/20");
-    HttpUriRequest req = new HttpGet(uri);
-    executeHttpQuery(req, new GsonObjectParser<Container>(Container.class), 
-      new ValueCallback<Container>() {
-        public void process(Container val) {
-          areWordsLoading.set(false);
-          if (val == null) {
-            callback.wordsLoaded(false);
-          } else {
-            callback.wordsLoaded(loadContainer(val));
-          }
-        }
-      });
-    
+    int count = Math.min(40, 25 + cardSvc.countPresent());
+    GetScheduledCards gsc = new GetScheduledCards(httpClient, count, new ValueCallback<Container>() {
+      public void process(Container val) {
+        callback.wordsLoaded(loadContainer(val));
+      }
+    });
+
+    gsc.onFailure(new Runnable() {
+      public void run() {
+        callback.wordsLoaded(false);
+      }
+    });
+
+    Scheduler.postRest(gsc);
   }
 
   private boolean loadContainer(Container val) {
@@ -171,104 +147,24 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     }
     return true;
   }
-  
-  public <F> void executeHttpQuery(final HttpUriRequest req, final ValueProcessor<HttpEntity, F> proc, final ValueCallback<F> cb) {
-    Runnable r = new Runnable() {      
-      public void run() {
-        HttpResponse resp;
-        try {
-          resp = httpClient.execute(req);
-        } catch (IOException e) {
-          Log.e("Kotonoha", "Couldn't execute http query ", e);
-          scheduleAnswer(cb, null);
-          return;
-        }
-        int code = resp.getStatusLine().getStatusCode();        
-        if (code != 200) {
-          scheduleAnswer(cb, null);
-          Log.e("Kotonoha", "Server error: got code" + code);
-          Log.e("Kotonoha", "Reason is:" + resp.getStatusLine().getReasonPhrase());
-          return;
-        }
-        HttpEntity entity = resp.getEntity();
-        F val;
-        try {
-          val = proc.process(entity);
-        } catch (Exception e) {
-          Log.e("Kotonoha", "Couldn't process http entity", e);
-          scheduleAnswer(cb, null);
-          return;
-        }
-        scheduleAnswer(cb, val);
-      }
-    };
-    webScheduler.schedule(r);
-  }
-  
-  public <F> void scheduleAnswer(final ValueCallback<F> cb, final F val) {
-    if (cb == null) { return; }
-    defaultScheduler.schedule(new Runnable() {
-      public void run() {        
-        cb.process(val); 
-      }
-    });
-  }
+
 
   public void sendMarks(final List<MarkEvent> marks) {
-    URI uri = serviceUri.resolve("events/mark");
-    GsonBuilder gb = new GsonBuilder();
-    gb.registerTypeAdapter(DateTime.class, new DateTimeTypeConverter());
-    Gson gson = gb.create();
-    String json = gson.toJson(marks);
-    
-    HttpPost req = new HttpPost(uri);
-    StringEntity se;
-    try {
-      se = new StringEntity(json, "utf-8");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
-    }
-    se.setContentType("application/json");
-    req.setEntity(se);
-
-    executeHttpQuery(req, new GsonObjectParser<Values>(Values.class),
-    new ValueCallback<Values>() {
+    PostMarkEvents pme = new PostMarkEvents(httpClient, marks, new ValueCallback<Values>() {
       public void process(Values val) {
-        if (val != null) {
-          markSvc.removeMarks(marks);
-          cardSvc.removeCardsFor(marks);
-        }
+        markSvc.removeMarks(marks);
+        cardSvc.removeCardsFor(marks);
       }
     });
+
+    pme.onFailure(new Runnable() {
+      public void run() {
+        markSvc.markForResend(marks);
+      }
+    });
+
+    Scheduler.postRest(pme);
   }
-
-  interface ValueProcessor<T, F> {
-    F process(final T val) throws Exception;
-  } 
-  
-  interface ValueCallback<T> {
-    void process(final T val);
-  }
-  
-  
-  public static class GsonObjectParser<T> implements ValueProcessor<HttpEntity, T> {
-    private Gson gson;
-    private Class<T> clazz;
-
-    public GsonObjectParser(Class<T> clazz) {
-      this.clazz = clazz;
-      GsonBuilder gb = new GsonBuilder();
-      gb.registerTypeAdapter(DateTime.class, new DateTimeTypeConverter());
-      gson = gb.create();
-    }
-
-    public T process(HttpEntity val) throws Exception {
-      InputStream content = val.getContent();
-      InputStreamReader reader = new InputStreamReader(content, Charset.forName("UTF-8"));
-      return gson.fromJson(reader, clazz);
-    }
-  }
-
 
   public class DataServiceBinder extends Binder {
 
@@ -284,10 +180,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   @Override
   public void onDestroy() {
-    super.onDestroy();
-    timerSc.shutdown();
-    webScheduler.shutdown();
-    defaultScheduler.shutdown();
+    Scheduler.destroy();
     httpClient.close();
+    super.onDestroy();
   }
 }

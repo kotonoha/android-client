@@ -73,7 +73,7 @@ public class CardService {
         return null;
       }
       card.setStatus(1);
-      dataService.defaultScheduler.schedule(new Runnable() {
+      Scheduler.schedule(new Runnable() {
         public void run() {
           cardDao.update(card);
         }
@@ -95,20 +95,15 @@ public class CardService {
   }
 
   public void reloadCards() {
-    dataService.defaultScheduler.schedule(new Runnable() {
-      public void run() {
-        TreeSet<WordCard> crds = loadCards();
-        synchronized (syncRoot) {
-          cards = crds;
-        }
-      }
-    });
+    TreeSet<WordCard> crds = loadCards();
+    synchronized (syncRoot) {
+      cards = crds;
+    }
   }
 
   public int countPresent() {
     synchronized (syncRoot) {
-      int size = cards.size();
-      return size;
+      return cards.size();
     }
   }
 

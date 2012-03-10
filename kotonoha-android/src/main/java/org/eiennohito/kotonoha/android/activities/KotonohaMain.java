@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.TextView;
+import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.R;
 import org.eiennohito.kotonoha.android.services.DataService;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
@@ -20,6 +21,7 @@ public class KotonohaMain extends Activity {
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    Log.init(this, "kotonoha-log.properties");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 

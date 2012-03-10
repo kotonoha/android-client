@@ -66,7 +66,7 @@ public class MarkService {
       Log.e("Kotonoha", "Error updating marks for submit", e);
     }
     
-    service.defaultScheduler.schedule(new Runnable() {
+    Scheduler.schedule(new Runnable() {
       public void run() {
         List<MarkEvent> marks = loadReadyMarks();
         service.sendMarks(marks);
@@ -80,17 +80,20 @@ public class MarkService {
     for (MarkEvent m : marks) {
       ids.add(m.getId());
     }
-      
+    setOperation(ids, 2);
+    return marks;
+  }
+
+  private void setOperation(List<Long> ids, int value) {
     try {
       UpdateBuilder<MarkEvent,Long> ub = markDao.updateBuilder();
       ub.where().in("id", ids);
-      ub.updateColumnValue("operation", 2);
+      ub.updateColumnValue("operation", value);
       PreparedUpdate<MarkEvent> pu = ub.prepare();
       markDao.update(pu);
     } catch (SQLException e) {
       Log.e("Kotonoha", "Error while marking updating marks", e);
     }
-    return marks;
   }
 
   public void removeMarks(List<MarkEvent> marks) {
@@ -106,5 +109,13 @@ public class MarkService {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public void markForResend(List<MarkEvent> marks) {
+    List<Long> ids = new ArrayList<Long>();
+    for (MarkEvent m : marks) {
+      ids.add(m.getId());
+    }
+    setOperation(ids, 1);
   }
 }

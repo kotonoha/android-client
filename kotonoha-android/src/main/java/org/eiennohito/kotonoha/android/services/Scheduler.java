@@ -1,45 +1,94 @@
-/*
- * Copyright 2012 eiennohito
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.eiennohito.kotonoha.android.services;
 
-import java.util.concurrent.*;
+import de.akquinet.android.androlog.Log;
+import org.eiennohito.kotonoha.android.rest.Request;
+import org.joda.time.Period;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * @author eiennohito
- * @since 11.02.12
+ * @since 08.03.12
  */
 public class Scheduler {
-  private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
-  private ThreadPoolExecutor executor;
+  public final static SchedulerService single = new SchedulerService(1, 1);
+  public final static SchedulerService defaultScheduler = new SchedulerService(1, 5);
+  public final static ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(2);
 
-  public Scheduler(int minThreads, int maxThreads) {
-    executor = new ThreadPoolExecutor(minThreads, maxThreads, 5, MINUTES, queue);
+  private static Future<?> scheduleSingle(Runnable toRun) {
+    return single.schedule(toRun);
   }
 
-  public Future<?> schedule(Runnable r) {
-    return executor.submit(r);
+  public static Future<?> schedule(Runnable toRun) {
+    return defaultScheduler.schedule(toRun);
   }
 
-  public <T> Future<T> schedule(Callable<T> callable) {
-    return executor.submit(callable);
+  public static ScheduledFuture<?> delayed(Runnable runnable, Period period) {
+    return timer.schedule(runnable, period.getMillis(), TimeUnit.MILLISECONDS);
   }
 
-  public void shutdown() {
-    executor.shutdown();
+  private static final Map<Long, Request> scheduled = new ConcurrentHashMap<Long, Request>(16, 0.75f, 4);
+  private static final Map<Long, Long> scheduledTimes = new ConcurrentHashMap<Long, Long>(16, 0.75f, 4);
+
+  public static synchronized void postRest(final Request<?> req) {
+    long id = req.identify();
+    long time = checkTimes(req, id);
+    Log.d(req, "Trying to schedule request " + req);
+    if (scheduled.containsKey(id)) {
+      Log.d(req, "Request of same type is already present, skipping");
+      return;
+    }
+    scheduled.put(id, req);
+    scheduledTimes.put(id, time);
+    scheduleSingle(new RequestWrapper(req));
+    Log.d(req, "Request scheduled");
+  }
+
+  private static long checkTimes(final Request<?> req, long id) {
+    long time = System.currentTimeMillis();
+    Long prev = scheduledTimes.get(id);
+    long passed;
+    long interval = req.spacingInterval();
+    if (prev == null) {
+      passed = interval + 1;
+    } else {
+      passed = time - prev;
+    }
+    if (passed < interval) {
+      delayed(new Runnable() {
+        public void run() {
+          postRest(req);
+        }
+      }, new Period(interval - passed));
+    }
+    return time;
+  }
+
+  public static void destroy() {
+    single.shutdown();
+    defaultScheduler.shutdown();
+    timer.shutdown();
+  }
+
+  private static class RequestWrapper implements Runnable {
+    private Request<?> req;
+
+    private RequestWrapper(Request<?> req) {
+      this.req = req;
+    }
+
+    public void run() {
+      try {
+        req.launchRequest();
+      } catch (Exception e) {
+        Log.e(req, "Error when executing request", e);
+      } finally {
+        long id = req.identify();
+        scheduled.remove(id);
+        Log.d(req, "Request " + req + " finished executing");
+      }
+    }
   }
 }

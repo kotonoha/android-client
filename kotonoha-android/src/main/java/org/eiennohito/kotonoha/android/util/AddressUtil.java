@@ -23,5 +23,5 @@ public class AddressUtil {
 
   //define address of deployed kotonoha server instance with api path
   // http://my.kotonoha.in/api
-  public static final String baseUri =
+  public static final String baseUri = "http://weaboo.net:8085/k/api/";
 }
