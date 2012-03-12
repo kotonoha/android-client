@@ -85,10 +85,6 @@ public class CardService {
   public void process(Collection<WordCard> crds) {
     for (WordCard card: crds) {
       card.setStatus(0);
-      ItemLearning l = card.getLearning();
-//      if (l != null) {
-//        learningDao.create(l);
-//      }
       cardDao.createIfNotExists(card);
     }
     reloadCards();

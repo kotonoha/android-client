@@ -19,17 +19,16 @@ import android.content.Intent;
 import android.net.http.AndroidHttpClient;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 import com.j256.ormlite.android.apptools.OrmLiteBaseService;
+import com.j256.ormlite.misc.TransactionManager;
+import de.akquinet.android.androlog.Log;
 import org.apache.http.params.HttpConnectionParams;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.db.Values;
 import org.eiennohito.kotonoha.android.rest.request.GetScheduledCards;
 import org.eiennohito.kotonoha.android.rest.request.PostMarkEvents;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
-import org.eiennohito.kotonoha.android.util.AddressUtil;
-import org.eiennohito.kotonoha.android.util.ValueCallback;
-import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
+import org.eiennohito.kotonoha.android.util.*;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
@@ -37,6 +36,7 @@ import org.eiennohito.kotonoha.model.learning.WordCard;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * @author eiennohito
@@ -59,8 +59,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     super.onCreate();
     httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0");
     
-    HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 5000);
-    HttpConnectionParams.setSoTimeout(httpClient.getParams(), 20000);
+    HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 3000);
+    HttpConnectionParams.setSoTimeout(httpClient.getParams(), 10000);
 
     markSvc = new MarkService(this);
     cardSvc = new CardService(this);
@@ -83,8 +83,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
       pushSubmitMarks();
     }
     int cnt = cardSvc.countPresent();
-    Log.d("Kotonoha", String.format("it's %d cards now", cnt));
-    if (cnt < 14) {
+    Log.d(this, String.format("it's %d cards now", cnt));
+    if (cnt < 25) {
       loadWordsAsync(WordsLoadedCallback.EMPTY);
     }
   }
@@ -121,7 +121,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   
   public void loadWordsAsync(final WordsLoadedCallback callback) {
-    int count = Math.min(40, 25 + cardSvc.countPresent());
+    //int count = Math.min(49, 25 + cardSvc.countPresent());
+    int count = 49;
     GetScheduledCards gsc = new GetScheduledCards(httpClient, count, new ValueCallback<Container>() {
       public void process(Container val) {
         callback.wordsLoaded(loadContainer(val));
@@ -137,28 +138,33 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     Scheduler.postRest(gsc);
   }
 
-  private boolean loadContainer(Container val) {
+  private boolean loadContainer(final Container val) {
     try {
-      wordSvc.process(val.getWords());
-      cardSvc.process(val.getCards());
+      TransactionManager.callInTransaction(getConnectionSource(), new Callable<Object>() {
+        public Object call() throws Exception {
+          wordSvc.process(val.getWords());
+          cardSvc.process(val.getCards());
+          return null;
+        }
+      });
     } catch (Exception e) {
-      Log.e("Kotonoha", "Couldn't load values from container", e);
+      Log.e(this, "Couldn't load values from container", e);
       return false;
     }
     return true;
   }
 
 
-  public void sendMarks(final List<MarkEvent> marks) {
-    PostMarkEvents pme = new PostMarkEvents(httpClient, marks, new ValueCallback<Values>() {
-      public void process(Values val) {
+  public void sendMarks(Callable<List<MarkEvent>> marks) {
+    PostMarkEvents pme = new PostMarkEvents(httpClient, marks, new SuccessCallback<List<MarkEvent>, Values>() {
+    public void onOk(List<MarkEvent> marks, Values values) {
         markSvc.removeMarks(marks);
         cardSvc.removeCardsFor(marks);
       }
     });
 
-    pme.onFailure(new Runnable() {
-      public void run() {
+    pme.onFailure(new ErrorCallback<List<MarkEvent>>() {
+      public void onError(List<MarkEvent> marks) {
         markSvc.markForResend(marks);
       }
     });
@@ -180,7 +186,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   @Override
   public void onDestroy() {
-    Scheduler.destroy();
+    //Scheduler.destroy();
     httpClient.close();
     super.onDestroy();
   }

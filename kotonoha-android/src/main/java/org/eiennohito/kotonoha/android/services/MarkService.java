@@ -28,6 +28,7 @@ import org.joda.time.DateTime;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * @author eiennohito
@@ -68,8 +69,12 @@ public class MarkService {
     
     Scheduler.schedule(new Runnable() {
       public void run() {
-        List<MarkEvent> marks = loadReadyMarks();
-        service.sendMarks(marks);
+        Callable<List<MarkEvent>> markC = new Callable<List<MarkEvent>>() {
+          public List<MarkEvent> call() throws Exception {
+            return loadReadyMarks();
+          }
+        };
+        service.sendMarks(markC);
       }
     });
   }
@@ -116,6 +121,6 @@ public class MarkService {
     for (MarkEvent m : marks) {
       ids.add(m.getId());
     }
-    setOperation(ids, 1);
+    setOperation(ids, 0);
   }
 }

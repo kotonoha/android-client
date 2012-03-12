@@ -69,7 +69,7 @@ public class WordService {
       cache.remove(id);
     }
     
-    Scheduler.schedule(new Runnable() {
+    Scheduler.schedule("delete marks from db", new Runnable() {
       public void run() {
         deleteFromDb(id);
       }

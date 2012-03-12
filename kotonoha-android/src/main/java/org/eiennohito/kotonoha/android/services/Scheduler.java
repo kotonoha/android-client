@@ -4,7 +4,6 @@ import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.rest.Request;
 import org.joda.time.Period;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -25,6 +24,10 @@ public class Scheduler {
     return defaultScheduler.schedule(toRun);
   }
 
+  public static Future<?> schedule(String name, Runnable toRun) {
+    return defaultScheduler.schedule(new TimedRunnable(name, toRun));
+  }
+
   public static ScheduledFuture<?> delayed(Runnable runnable, Period period) {
     return timer.schedule(runnable, period.getMillis(), TimeUnit.MILLISECONDS);
   }
@@ -34,19 +37,21 @@ public class Scheduler {
 
   public static synchronized void postRest(final Request<?> req) {
     long id = req.identify();
-    long time = checkTimes(req, id);
+    if (!checkTimes(req, id)) {
+      return;
+    }
     Log.d(req, "Trying to schedule request " + req);
     if (scheduled.containsKey(id)) {
       Log.d(req, "Request of same type is already present, skipping");
       return;
     }
     scheduled.put(id, req);
-    scheduledTimes.put(id, time);
+    scheduledTimes.put(id, System.currentTimeMillis());
     scheduleSingle(new RequestWrapper(req));
     Log.d(req, "Request scheduled");
   }
 
-  private static long checkTimes(final Request<?> req, long id) {
+  private static boolean checkTimes(final Request<?> req, long id) {
     long time = System.currentTimeMillis();
     Long prev = scheduledTimes.get(id);
     long passed;
@@ -62,8 +67,9 @@ public class Scheduler {
           postRest(req);
         }
       }, new Period(interval - passed));
+      return false;
     }
-    return time;
+    return true;
   }
 
   public static void destroy() {
@@ -80,14 +86,37 @@ public class Scheduler {
     }
 
     public void run() {
+      long tm = System.nanoTime();
       try {
         req.launchRequest();
       } catch (Exception e) {
         Log.e(req, "Error when executing request", e);
       } finally {
         long id = req.identify();
+        long time = System.nanoTime() - tm;
         scheduled.remove(id);
-        Log.d(req, "Request " + req + " finished executing");
+        Log.d(req, String.format("Request %s finished executing in %.1f ms", req, time / 1e6));
+      }
+    }
+  }
+
+  private static class TimedRunnable implements Runnable {
+    private String tag;
+    private Runnable inner;
+
+    public TimedRunnable(String tag, Runnable inner) {
+      this.tag = tag;
+      this.inner = inner;
+    }
+
+    public void run() {
+      long tm = System.nanoTime();
+      try {
+        inner.run();
+      } finally {
+        long time = System.nanoTime() - tm;
+        String res = String.format("Executed request %s in %.1f ms", tag, time / 1e6);
+        Log.d(Scheduler.class.getName(), res);
       }
     }
   }
