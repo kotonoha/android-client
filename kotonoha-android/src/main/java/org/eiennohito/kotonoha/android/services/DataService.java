@@ -29,6 +29,7 @@ import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.db.Values;
 import org.eiennohito.kotonoha.android.json.GsonInstance;
 import org.eiennohito.kotonoha.android.rest.request.GetScheduledCards;
+import org.eiennohito.kotonoha.android.rest.request.GetStatusRequest;
 import org.eiennohito.kotonoha.android.rest.request.PostMarkEvents;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
 import org.eiennohito.kotonoha.android.util.ErrorCallback;
@@ -84,7 +85,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   public void createRestSvc(AuthObject ao) {
     Token token = new Token(ao.getTokenPublic(), ao.getTokenSecret());
-    restSvc = new RestService(ao.getBaseUri(), token);
+    restSvc = new RestService(httpClient, ao.getBaseUri(), token);
   }
 
   public void markWord(WordCard card, double mark, double time) {
@@ -143,7 +144,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public void loadWordsAsync(final WordsLoadedCallback callback) {
     //int count = Math.min(49, 25 + cardSvc.countPresent());
     int count = 49;
-    GetScheduledCards gsc = new GetScheduledCards(httpClient, count, new ValueCallback<Container>() {
+    GetScheduledCards gsc = new GetScheduledCards(restSvc, count, new ValueCallback<Container>() {
       public void process(Container val) {
         callback.wordsLoaded(loadContainer(val));
       }
@@ -176,7 +177,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
 
   public void sendMarks(Callable<List<MarkEvent>> marks) {
-    PostMarkEvents pme = new PostMarkEvents(httpClient, marks, new SuccessCallback<List<MarkEvent>, Values>() {
+    PostMarkEvents pme = new PostMarkEvents(restSvc, marks, new SuccessCallback<List<MarkEvent>, Values>() {
     public void onOk(List<MarkEvent> marks, Values values) {
         markSvc.removeMarks(marks);
         cardSvc.removeCardsFor(marks);
@@ -194,6 +195,11 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   public List<Purgeable> purgeables() {
     return Arrays.asList(markSvc, cardSvc, wordSvc);
+  }
+
+  public void postStatus(ValueCallback<String> callback) {
+    GetStatusRequest req = new GetStatusRequest(restSvc, callback);
+    Scheduler.postRest(req);
   }
 
   public boolean parseAuthInfo(String contents) {

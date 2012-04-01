@@ -1,9 +1,9 @@
 package org.eiennohito.kotonoha.android.rest;
 
-import android.net.http.AndroidHttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.eiennohito.kotonoha.android.json.GsonObjectEntity;
+import org.eiennohito.kotonoha.android.services.RestService;
 import org.eiennohito.kotonoha.android.util.ErrorCallback;
 import org.eiennohito.kotonoha.android.util.SuccessCallback;
 import org.eiennohito.kotonoha.android.util.ValueCallback;
@@ -14,11 +14,11 @@ import java.util.concurrent.Callable;
  * @author eiennohito
  * @since 10.03.12
  */
-public abstract class RestPostRequest<Req, Resp> extends Request<Resp> {
+public abstract class RestPostRequest<Req, Resp> extends RestRequest<Resp> {
   protected Callable<Req> data;
 
-  public RestPostRequest(AndroidHttpClient client, String servPath, Callable<Req> data, final SuccessCallback<Req, Resp> callback) {
-    super(client, servPath, new RespValueCallback<Req, Resp>(callback));
+  public RestPostRequest(RestService svc, String servPath, Callable<Req> data, final SuccessCallback<Req, Resp> callback) {
+    super(svc, servPath, new RespValueCallback<Req, Resp>(callback));
     this.data = data;
   }
 

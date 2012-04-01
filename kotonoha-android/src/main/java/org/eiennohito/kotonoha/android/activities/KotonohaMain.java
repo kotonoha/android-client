@@ -11,10 +11,13 @@ import android.widget.TextView;
 import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.R;
 import org.eiennohito.kotonoha.android.services.DataService;
+import org.eiennohito.kotonoha.android.util.ValueCallback;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
 import org.eiennohito.kotonoha.android.util.zxing.IntentIntegrator;
 import org.eiennohito.kotonoha.android.util.zxing.IntentResult;
 import org.eiennohito.kotonoha.android.voice.VoiceRecognition;
+
+import java.io.*;
 
 import static org.eiennohito.kotonoha.android.util.ActivityUtil.setAllClickable;
 
@@ -41,12 +44,27 @@ public class KotonohaMain extends Activity {
     Log.init(this, "kotonoha-log.properties");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
+    connectToService();
 
     findViewById(R.id.preloadWordsBtn).setOnClickListener(new View.OnClickListener() {
       public void onClick(View view) {
         if (toConfigured()) {
           aloadWords();
         }
+      }
+    });
+
+    findViewById(R.id.status_btn).setOnClickListener( new View.OnClickListener() {
+      public void onClick(View view) {
+        service.postStatus(new ValueCallback<String>() {
+          public void process(final String val) {
+            runOnUiThread(new Runnable() {
+              public void run() {
+                setStatusText(val);
+              }
+            });
+          }
+        });
       }
     });
 
@@ -68,8 +86,6 @@ public class KotonohaMain extends Activity {
         ii.initiateScan();
       }
     });
-
-    connectToService();
   }
 
   private boolean toInitial() {
@@ -114,18 +130,50 @@ public class KotonohaMain extends Activity {
     return true;
   }
 
+  private String savedContents;
+
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     IntentResult res = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
     if (res != null) {
       String contents = res.getContents();
-      boolean result = service.parseAuthInfo(contents);
-      if (result) {
-        toConfigured();
-        setStatusText("Auth ok, loading words");
+      synchronized (this) {
+        if (service == null) {
+          savedContents = contents;
+        } else {
+          eatAuth(contents);
+        }
       }
     }
     super.onActivityResult(requestCode, resultCode, data);
+  }
+
+  private void eatAuth(String contents) {
+    boolean result = service.parseAuthInfo(contents);
+    if (result) {
+      toConfigured();
+      setStatusText("Auth ok, loading words");
+    }
+  }
+
+  @Override
+  protected void onResume() {
+    try {
+      FileInputStream stream = openFileInput("cache.txt");
+      InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+      char[] buffer = new char[2048];
+      int read = reader.read(buffer);
+      if (read > 0) {
+        savedContents = new String(buffer, 0, read);
+      }
+      stream.close();
+      deleteFile("cache.txt");
+    } catch (FileNotFoundException e) {
+      //do nothing
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    super.onResume();
   }
 
   private WordsLoadedCallback wordsLoadedCallback = new WordsLoadedCallback() {
@@ -164,6 +212,10 @@ public class KotonohaMain extends Activity {
 
     public void onServiceConnected(ComponentName name, IBinder binder) {
       service = ((DataService.DataServiceBinder)binder).getService();
+      if (savedContents != null) {
+        eatAuth(savedContents);
+        savedContents = null;
+      }
       if (!toConfigured()) {
         setStatusText("Please login in kotonoha!");
       } else {
@@ -186,6 +238,22 @@ public class KotonohaMain extends Activity {
 
   private void connectToService() {
     bindService(new Intent(this, DataService.class), connection, BIND_AUTO_CREATE);
+  }
+
+  @Override
+  protected void onStop() {
+    if (savedContents != null) {
+      try {
+        FileOutputStream stream = this.openFileOutput("cache.txt", MODE_PRIVATE);
+        OutputStreamWriter pw = new OutputStreamWriter(stream, "UTF-8");
+        pw.write(savedContents);
+        pw.flush();
+        stream.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    super.onStop();
   }
 
   @Override

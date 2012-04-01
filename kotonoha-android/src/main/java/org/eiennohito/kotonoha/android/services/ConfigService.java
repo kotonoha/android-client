@@ -37,6 +37,7 @@ public class ConfigService {
     try {
       PrintWriter pw = new PrintWriter(path, "UTF-8");
       GsonInstance.instance().toJson(conf, pw);
+      pw.close();
     } catch (IOException ex) {
       Log.e(this, "Can't write config to file");
     }

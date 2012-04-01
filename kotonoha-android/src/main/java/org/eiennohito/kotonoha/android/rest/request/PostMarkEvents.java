@@ -1,10 +1,10 @@
 package org.eiennohito.kotonoha.android.rest.request;
 
-import android.net.http.AndroidHttpClient;
 import org.apache.http.HttpResponse;
 import org.eiennohito.kotonoha.android.db.Values;
 import org.eiennohito.kotonoha.android.json.GsonObjectParser;
 import org.eiennohito.kotonoha.android.rest.RestPostRequest;
+import org.eiennohito.kotonoha.android.services.RestService;
 import org.eiennohito.kotonoha.android.util.SuccessCallback;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 
@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
  * @since 10.03.12
  */
 public class PostMarkEvents extends RestPostRequest<List<MarkEvent>, Values> {
-  public PostMarkEvents(AndroidHttpClient client, Callable<List<MarkEvent>> data,
+  public PostMarkEvents(RestService client, Callable<List<MarkEvent>> data,
                         SuccessCallback<List<MarkEvent>, Values> listValueCallback) {
     super(client, "events/mark", data, listValueCallback);
   }

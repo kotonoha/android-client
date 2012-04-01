@@ -1,7 +1,7 @@
 package org.eiennohito.kotonoha.android.services;
 
 import de.akquinet.android.androlog.Log;
-import org.eiennohito.kotonoha.android.rest.Request;
+import org.eiennohito.kotonoha.android.rest.RestRequest;
 import org.joda.time.Period;
 
 import java.util.Map;
@@ -32,10 +32,10 @@ public class Scheduler {
     return timer.schedule(runnable, period.getMillis(), TimeUnit.MILLISECONDS);
   }
 
-  private static final Map<Long, Request> scheduled = new ConcurrentHashMap<Long, Request>(16, 0.75f, 4);
+  private static final Map<Long, RestRequest> scheduled = new ConcurrentHashMap<Long, RestRequest>(16, 0.75f, 4);
   private static final Map<Long, Long> scheduledTimes = new ConcurrentHashMap<Long, Long>(16, 0.75f, 4);
 
-  public static synchronized void postRest(final Request<?> req) {
+  public static synchronized void postRest(final RestRequest<?> req) {
     long id = req.identify();
     if (!checkTimes(req, id)) {
       return;
@@ -51,7 +51,7 @@ public class Scheduler {
     Log.d(req, "Request scheduled");
   }
 
-  private static boolean checkTimes(final Request<?> req, long id) {
+  private static boolean checkTimes(final RestRequest<?> req, long id) {
     long time = System.currentTimeMillis();
     Long prev = scheduledTimes.get(id);
     long passed;
@@ -79,9 +79,9 @@ public class Scheduler {
   }
 
   private static class RequestWrapper implements Runnable {
-    private Request<?> req;
+    private RestRequest<?> req;
 
-    private RequestWrapper(Request<?> req) {
+    private RequestWrapper(RestRequest<?> req) {
       this.req = req;
     }
 
