@@ -29,7 +29,7 @@ import java.util.HashMap;
  * @author eiennohito
  * @since 11.02.12
  */
-public class WordService {
+public class WordService implements Purgeable {
   private final DataService dataService;
   private final RuntimeExceptionDao<Word,Long> wordDao;
   private HashMap<Long, Word> cache = new HashMap<Long, Word>();
@@ -104,5 +104,10 @@ public class WordService {
   public void clear() {
     wordDao.updateRaw("delete from word where id not in (select c.word from wordcard c)");
     exampleDao.updateRaw("delete from example where word_id not in (select w.id from word w)");
+  }
+
+  public void purge() {
+    wordDao.updateRaw("delete from word");
+    exampleDao.updateRaw("delete from example");
   }
 }

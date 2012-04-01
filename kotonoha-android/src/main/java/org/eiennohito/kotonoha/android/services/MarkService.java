@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
  * @author eiennohito
  * @since 11.02.12
  */
-public class MarkService {
+public class MarkService implements Purgeable {
   private DataService service;
   private final RuntimeExceptionDao<MarkEvent,Long> markDao;
 
@@ -122,5 +122,9 @@ public class MarkService {
       ids.add(m.getId());
     }
     setOperation(ids, 0);
+  }
+
+  public void purge() {
+    markDao.updateRaw("delete from markevent");
   }
 }

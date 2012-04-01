@@ -12,11 +12,28 @@ import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.R;
 import org.eiennohito.kotonoha.android.services.DataService;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
+import org.eiennohito.kotonoha.android.util.zxing.IntentIntegrator;
+import org.eiennohito.kotonoha.android.util.zxing.IntentResult;
 import org.eiennohito.kotonoha.android.voice.VoiceRecognition;
+
+import static org.eiennohito.kotonoha.android.util.ActivityUtil.setAllClickable;
 
 public class KotonohaMain extends Activity {
 
-  private static final String TAG = Activity.class.getSimpleName();
+  enum State {
+    Initial,
+    Configured,
+    AsyncLoading,
+    Ready
+  }
+
+  private State state = State.Initial;
+
+  private static final int[] availableOnLogin = new int[] {
+    R.id.preloadWordsBtn,
+    R.id.record,
+    R.id.showWordBtn
+  };
 
   /** Called when the activity is first created. */
   @Override
@@ -27,9 +44,9 @@ public class KotonohaMain extends Activity {
 
     findViewById(R.id.preloadWordsBtn).setOnClickListener(new View.OnClickListener() {
       public void onClick(View view) {
-        findViewById(R.id.preloadWordsBtn).setClickable(false);
-        findViewById(R.id.showWordBtn).setClickable(false);
-        service.loadWordsAsync(wordsLoadedCallback);
+        if (toConfigured()) {
+          aloadWords();
+        }
       }
     });
 
@@ -45,9 +62,71 @@ public class KotonohaMain extends Activity {
       }
     });
 
+    findViewById(R.id.login_btn).setOnClickListener(new View.OnClickListener() {
+      public void onClick(View view) {
+        IntentIntegrator ii = new IntentIntegrator(KotonohaMain.this);
+        ii.initiateScan();
+      }
+    });
+
     connectToService();
   }
 
+  private boolean toInitial() {
+    state = State.Initial;
+    setAllClickable(availableOnLogin, this, false);
+    return true;
+  }
+
+  private boolean toConfigured() {
+    if (!service.isAuthOk()) {
+      return false;
+    }
+    state = State.Configured;
+    Runnable runnable = new Runnable() {
+      public void run() {
+        findViewById(R.id.preloadWordsBtn).setClickable(false);
+        findViewById(R.id.showWordBtn).setClickable(false);
+      }
+    };
+    runOnUiThread(runnable);
+    return true;
+  }
+
+  private boolean toAsyncLoading() {
+    if (state != State.Configured) {
+      return false;
+    }
+    state = State.AsyncLoading;
+    Runnable runnable = new Runnable() {
+      public void run() {
+        findViewById(R.id.showWordBtn).setClickable(service.hasNextCard());
+        findViewById(R.id.preloadWordsBtn).setClickable(false);
+      }
+    };
+    runOnUiThread(runnable);
+    return true;
+  }
+
+  private boolean toReady() {
+    state = State.Ready;
+    setAllClickable(availableOnLogin, this, true);
+    return true;
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    IntentResult res = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+    if (res != null) {
+      String contents = res.getContents();
+      boolean result = service.parseAuthInfo(contents);
+      if (result) {
+        toConfigured();
+        setStatusText("Auth ok, loading words");
+      }
+    }
+    super.onActivityResult(requestCode, resultCode, data);
+  }
 
   private WordsLoadedCallback wordsLoadedCallback = new WordsLoadedCallback() {
     public void wordsLoaded(final boolean success) {
@@ -59,14 +138,18 @@ public class KotonohaMain extends Activity {
     }
   };
 
+  private void setStatusText(String text) {
+    TextView tv = (TextView)findViewById(R.id.statusText);
+    tv.setText(text);
+  }
+
 
   private void handleLoadWords(boolean success) {
-    TextView tv = (TextView)findViewById(R.id.statusText);
-    tv.setText(success ? "Ok" : "Not Ok");
-
-    findViewById(R.id.preloadWordsBtn).setClickable(true);
+    setStatusText(success ? "Words have loaded successfully" : "Error when loading words");
     if (success) {
-      findViewById(R.id.showWordBtn).setClickable(true);
+      toReady();
+    } else {
+      toConfigured();
     }
   }
 
@@ -81,9 +164,25 @@ public class KotonohaMain extends Activity {
 
     public void onServiceConnected(ComponentName name, IBinder binder) {
       service = ((DataService.DataServiceBinder)binder).getService();
-      service.loadWordsAsync(wordsLoadedCallback);
+      if (!toConfigured()) {
+        setStatusText("Please login in kotonoha!");
+      } else {
+        if (service.hasNextCard()) {
+          service.loadWordsAsync(WordsLoadedCallback.EMPTY); //update words
+          toReady();
+        } else {
+          aloadWords();
+        }
+      }
     }
   };
+
+  private void aloadWords() {
+    if (toAsyncLoading()) {
+      setStatusText("Loading words asynchronously");
+      service.loadWordsAsync(wordsLoadedCallback);
+    }
+  }
 
   private void connectToService() {
     bindService(new Intent(this, DataService.class), connection, BIND_AUTO_CREATE);

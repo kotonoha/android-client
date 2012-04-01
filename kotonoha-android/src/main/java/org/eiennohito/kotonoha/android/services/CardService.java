@@ -32,7 +32,7 @@ import java.util.*;
  * @author eiennohito
  * @since 11.02.12
  */
-public class CardService {
+public class CardService implements Purgeable {
   private final Object syncRoot = new Object();
   private final DataService dataService;
   private final RuntimeExceptionDao<WordCard,Long> cardDao;
@@ -140,5 +140,10 @@ public class CardService {
     ArrayList<Long> ids = new ArrayList<Long>();
     ids.add(card.getId());
     dropCardsByIds(ids);
+  }
+
+  public void purge() {
+    learningDao.updateRaw("delete from wordcard");
+    learningDao.updateRaw("delete from itemlearning");
   }
 }

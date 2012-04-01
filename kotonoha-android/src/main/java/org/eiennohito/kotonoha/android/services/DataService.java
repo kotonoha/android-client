@@ -19,22 +19,30 @@ import android.content.Intent;
 import android.net.http.AndroidHttpClient;
 import android.os.Binder;
 import android.os.IBinder;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.j256.ormlite.android.apptools.OrmLiteBaseService;
 import com.j256.ormlite.misc.TransactionManager;
 import de.akquinet.android.androlog.Log;
 import org.apache.http.params.HttpConnectionParams;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.db.Values;
+import org.eiennohito.kotonoha.android.json.GsonInstance;
 import org.eiennohito.kotonoha.android.rest.request.GetScheduledCards;
 import org.eiennohito.kotonoha.android.rest.request.PostMarkEvents;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
-import org.eiennohito.kotonoha.android.util.*;
+import org.eiennohito.kotonoha.android.util.ErrorCallback;
+import org.eiennohito.kotonoha.android.util.SuccessCallback;
+import org.eiennohito.kotonoha.android.util.ValueCallback;
+import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
+import org.eiennohito.kotonoha.rest.AuthObject;
+import org.scribe.model.Token;
 
-import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -43,11 +51,11 @@ import java.util.concurrent.Callable;
  * @since 10.02.12
  */
 public class DataService extends OrmLiteBaseService<DatabaseHelper> {
-  public final static URI serviceUri = URI.create(AddressUtil.baseUri);
-
   MarkService markSvc;
   CardService cardSvc;
   WordService wordSvc;
+  ConfigService confSvc;
+  RestService restSvc;
 
   /**
    * All web service calls should be done through this scheduler.
@@ -56,6 +64,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   @Override
   public void onCreate() {
+    confSvc = new ConfigService(this);
+    confSvc.load();
     super.onCreate();
     httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0");
     
@@ -65,6 +75,16 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     markSvc = new MarkService(this);
     cardSvc = new CardService(this);
     wordSvc = new WordService(this);
+
+    AuthObject ao = confSvc.config().getAuthObject();
+    if (ao != null) {
+      createRestSvc(ao);
+    }
+  }
+
+  public void createRestSvc(AuthObject ao) {
+    Token token = new Token(ao.getTokenPublic(), ao.getTokenSecret());
+    restSvc = new RestService(ao.getBaseUri(), token);
   }
 
   public void markWord(WordCard card, double mark, double time) {
@@ -172,8 +192,32 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     Scheduler.postRest(pme);
   }
 
-  public class DataServiceBinder extends Binder {
+  public List<Purgeable> purgeables() {
+    return Arrays.asList(markSvc, cardSvc, wordSvc);
+  }
 
+  public boolean parseAuthInfo(String contents) {
+    Gson gson = GsonInstance.instance();
+    try {
+      AuthObject ao = gson.fromJson(contents, AuthObject.class);
+      for (Purgeable p : purgeables()) {
+        if (p != null) { p.purge(); }
+      }
+      createRestSvc(ao);
+      confSvc.config().setAuthObject(ao);
+      confSvc.asave();
+      return true;
+    } catch (JsonSyntaxException e) {
+      Log.e(this, "Invalid auth message format", e);
+      return false;
+    }
+  }
+
+  public boolean isAuthOk() {
+    return confSvc.config().getAuthObject() != null;
+  }
+
+  public class DataServiceBinder extends Binder {
     public DataService getService() {
       return DataService.this;
     }
