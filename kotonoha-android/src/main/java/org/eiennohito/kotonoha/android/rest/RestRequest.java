@@ -17,13 +17,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author eiennohito
  * @since 08.03.12
  */
 abstract public class RestRequest<Resp> {
+  private static final String AUTHORIZATION = "Authorization";
   private final RestService svc;
   protected final ValueCallback<Resp> callback;
   private List<Runnable> failureCallbacks = new ArrayList<Runnable>();
@@ -82,14 +82,12 @@ abstract public class RestRequest<Resp> {
       HttpEntityEnclosingRequestBase erb = (HttpEntityEnclosingRequestBase) req;
       GsonObjectEntity entity = (GsonObjectEntity) erb.getEntity();
       oar.addPayload(entity.array());
-      for (Header h : req.getAllHeaders()) {
-        oar.addHeader(h.getName(), h.getValue());
-      }
-      svc.sign(oar);
-      for (Map.Entry<String, String> en : oar.getOauthParameters().entrySet()) {
-        req.addHeader(en.getKey(), en.getValue());
-      }
     }
+    for (Header h : req.getAllHeaders()) {
+      oar.addHeader(h.getName(), h.getValue());
+    }
+    svc.sign(oar);
+    req.addHeader(AUTHORIZATION, oar.getHeaders().get(AUTHORIZATION));
   }
 
   private void returnAsync(final Resp resp) {
