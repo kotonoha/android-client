@@ -3,9 +3,7 @@ package org.eiennohito.kotonoha.android.rest;
 import de.akquinet.android.androlog.Log;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.eiennohito.kotonoha.android.json.GsonObjectEntity;
 import org.eiennohito.kotonoha.android.services.RestService;
 import org.eiennohito.kotonoha.android.services.Scheduler;
 import org.eiennohito.kotonoha.android.util.ValueCallback;
@@ -78,11 +76,11 @@ abstract public class RestRequest<Resp> {
 
   private void sign(HttpUriRequest req) {
     OAuthRequest oar = new OAuthRequest(Verb.valueOf(req.getMethod()), req.getURI().toString());
-    if (req instanceof HttpEntityEnclosingRequestBase) {
+/*    if (req instanceof HttpEntityEnclosingRequestBase) {
       HttpEntityEnclosingRequestBase erb = (HttpEntityEnclosingRequestBase) req;
       GsonObjectEntity entity = (GsonObjectEntity) erb.getEntity();
       oar.addPayload(entity.array());
-    }
+    }*/
     for (Header h : req.getAllHeaders()) {
       oar.addHeader(h.getName(), h.getValue());
     }
