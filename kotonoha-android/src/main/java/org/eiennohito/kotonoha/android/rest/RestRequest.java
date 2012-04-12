@@ -7,7 +7,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.eiennohito.kotonoha.android.services.RestService;
 import org.eiennohito.kotonoha.android.services.Scheduler;
 import org.eiennohito.kotonoha.android.util.ValueCallback;
-import org.joda.time.Period;
+import org.joda.time.Duration;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Verb;
 
@@ -111,7 +111,7 @@ abstract public class RestRequest<Resp> {
       public void run() {
         Scheduler.postRest(RestRequest.this);
       }
-    }, Period.seconds(5));
+    }, Duration.standardSeconds(5));
   }
 
   protected abstract Resp transform(HttpResponse response) throws Exception;

@@ -2,7 +2,7 @@ package org.eiennohito.kotonoha.android.services;
 
 import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.rest.RestRequest;
-import org.joda.time.Period;
+import org.joda.time.Duration;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -28,8 +28,13 @@ public class Scheduler {
     return defaultScheduler.schedule(new TimedRunnable(name, toRun));
   }
 
-  public static ScheduledFuture<?> delayed(Runnable runnable, Period period) {
+  public static ScheduledFuture<?> delayed(Runnable runnable, Duration period) {
     return timer.schedule(runnable, period.getMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  public static ScheduledFuture<?> every(Runnable runnable, Duration period) {
+    long millis = period.getMillis();
+    return timer.scheduleAtFixedRate(runnable, millis, millis, TimeUnit.MILLISECONDS);
   }
 
   private static final Map<Long, RestRequest> scheduled = new ConcurrentHashMap<Long, RestRequest>(16, 0.75f, 4);
@@ -70,7 +75,7 @@ public class Scheduler {
         public void run() {
           postRest(req);
         }
-      }, new Period(interval - passed));
+      }, new Duration(interval - passed));
       return false;
     }
     return true;
