@@ -47,7 +47,11 @@ public class Scheduler {
     }
     scheduled.put(id, req);
     scheduledTimes.put(id, System.currentTimeMillis());
-    scheduleSingle(new RequestWrapper(req));
+    if (req.singleThreaded()) {
+      scheduleSingle(new RequestWrapper(req));
+    } else {
+      schedule(new RequestWrapper(req));
+    }
     Log.d(req, "Request scheduled");
   }
 

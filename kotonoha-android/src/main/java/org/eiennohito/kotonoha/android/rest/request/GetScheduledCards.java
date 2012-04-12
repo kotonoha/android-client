@@ -27,4 +27,9 @@ public class GetScheduledCards extends RestGetRequest<Container> {
   public long spacingInterval() {
     return 7500L;
   }
+
+  @Override
+  public boolean singleThreaded() {
+    return true;
+  }
 }

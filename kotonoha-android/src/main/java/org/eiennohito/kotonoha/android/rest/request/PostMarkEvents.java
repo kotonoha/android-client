@@ -25,4 +25,9 @@ public class PostMarkEvents extends RestPostRequest<List<MarkEvent>, Values> {
   protected Values transform(HttpResponse response) throws Exception {
     return new GsonObjectParser<Values>(Values.class).process(response.getEntity());
   }
+
+  @Override
+  public boolean singleThreaded() {
+    return true;
+  }
 }

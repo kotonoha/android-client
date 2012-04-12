@@ -122,6 +122,10 @@ abstract public class RestRequest<Resp> {
     return getClass().hashCode();
   }
 
+  public boolean singleThreaded() {
+    return false;
+  }
+
   protected void success(final Resp resp) {
     Scheduler.schedule("Successful response", new Runnable() {
       public void run() {
