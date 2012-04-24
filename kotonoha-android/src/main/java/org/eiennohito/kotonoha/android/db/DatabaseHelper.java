@@ -17,11 +17,14 @@ package org.eiennohito.kotonoha.android.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
 import com.j256.ormlite.support.ConnectionSource;
-import com.j256.ormlite.table.TableUtils;
+import de.akquinet.android.androlog.Log;
+import org.eiennohito.kotonoha.android.db.migration.Migration;
+import org.eiennohito.kotonoha.android.db.migration.Migrations;
+import org.eiennohito.kotonoha.model.events.AddWordEvent;
+import org.eiennohito.kotonoha.model.events.ChangeWordStatusEvent;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Example;
 import org.eiennohito.kotonoha.model.learning.ItemLearning;
@@ -37,7 +40,7 @@ import java.sql.SQLException;
 public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
   
   private static String dbname = "kotonoha.db";
-  private static int version = 1;
+  private static int version = 2;
 
   public DatabaseHelper(Context c) {
     super(c, dbname, null, version);
@@ -46,21 +49,21 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
   
   @Override
   public void onCreate(SQLiteDatabase database, ConnectionSource connectionSource) {
-    try {
-      TableUtils.createTable(connectionSource, Word.class);
-      TableUtils.createTable(connectionSource, WordCard.class);
-      TableUtils.createTable(connectionSource, ItemLearning.class);
-      TableUtils.createTable(connectionSource, Example.class);
-      TableUtils.createTable(connectionSource, MarkEvent.class);
-    } catch (SQLException e)  {
-      Log.e("K/DH", "Error in creating table", e);
-    }
-    
+    onUpgrade(database, connectionSource, 0, version);
   }
 
   @Override
   public void onUpgrade(SQLiteDatabase database, ConnectionSource connectionSource, int oldVersion, int newVersion) {
-    //do nothing right now
+    if (newVersion > oldVersion) {
+      for (int ver = oldVersion; ver < newVersion; ++ver) {
+        try {
+          Migration migration = Migrations.MIGRATION_ARRAY[ver];
+          migration.migrate(database, connectionSource, this);
+        } catch (SQLException ex) {
+          Log.e(this, String.format("Error in migrating from %d to %d", oldVersion, newVersion), ex);
+        }
+      }
+    }
   }
 
   public RuntimeExceptionDao<Word, Long> getWordDao() {
@@ -81,6 +84,14 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
   public RuntimeExceptionDao<ItemLearning, Long> getLearningDao() {
     return createDaoForClass(ItemLearning.class);
+  }
+
+  public RuntimeExceptionDao<AddWordEvent, Long> getAddWordEventDao() {
+    return createDaoForClass(AddWordEvent.class);
+  }
+
+  public RuntimeExceptionDao<ChangeWordStatusEvent, Long> getChangeWordDao() {
+    return createDaoForClass(ChangeWordStatusEvent.class);
   }
 
   public <T, X> RuntimeExceptionDao<T, X> createDaoForClass(Class<T> clazz) {
