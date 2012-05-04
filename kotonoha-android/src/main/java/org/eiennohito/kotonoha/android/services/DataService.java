@@ -69,7 +69,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     confSvc.load();
     super.onCreate();
     httpClient = AndroidHttpClient.newInstance("Kotonoha/1.0");
-    
+
     HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 3000);
     HttpConnectionParams.setSoTimeout(httpClient.getParams(), 10000);
 
@@ -99,6 +99,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   }
 
   private int callCount = 0;
+
   private void checkGetNewWords() {
     if (++callCount % 4 == 0) {
       pushSubmitMarks();
@@ -117,6 +118,14 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public boolean preloadWords() {
     loadWordsAsync(WordsLoadedCallback.EMPTY);
     return cardSvc.hasNextCard();
+  }
+
+  public void addNewWord(String word) {
+
+  }
+
+  public void setWordAsBad(Long wordId) {
+
   }
 
   public WordWithCard getNextWord() {
@@ -140,7 +149,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     markSvc.submit();
   }
 
-  
+
   public void loadWordsAsync(final WordsLoadedCallback callback) {
     //int count = Math.min(49, 25 + cardSvc.countPresent());
     int count = 49;
@@ -178,7 +187,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
 
   public void sendMarks(Callable<List<MarkEvent>> marks) {
     PostMarkEvents pme = new PostMarkEvents(restSvc, marks, new SuccessCallback<List<MarkEvent>, Values>() {
-    public void onOk(List<MarkEvent> marks, Values values) {
+      public void onOk(List<MarkEvent> marks, Values values) {
         markSvc.removeMarks(marks);
         cardSvc.removeCardsFor(marks);
       }
@@ -207,7 +216,9 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     try {
       AuthObject ao = gson.fromJson(contents, AuthObject.class);
       for (Purgeable p : purgeables()) {
-        if (p != null) { p.purge(); }
+        if (p != null) {
+          p.purge();
+        }
       }
       createRestSvc(ao);
       confSvc.config().setAuthObject(ao);

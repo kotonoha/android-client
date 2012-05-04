@@ -12,4 +12,5 @@
   <string name="record_audio">Record</string>
   <string name="voice_record_act_name">Voice recognition form</string>
   <string name="login">Login</string>
+  <string name="bad_card">Mark card as bad</string>
 </resources>

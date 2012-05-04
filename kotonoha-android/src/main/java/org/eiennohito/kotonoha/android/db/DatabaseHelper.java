@@ -38,15 +38,15 @@ import java.sql.SQLException;
  * @since 11.02.12
  */
 public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
-  
+
   private static String dbname = "kotonoha.db";
-  private static int version = 2;
+  private static int version = Migrations.MIGRATION_ARRAY.length;
 
   public DatabaseHelper(Context c) {
     super(c, dbname, null, version);
   }
 
-  
+
   @Override
   public void onCreate(SQLiteDatabase database, ConnectionSource connectionSource) {
     onUpgrade(database, connectionSource, 0, version);

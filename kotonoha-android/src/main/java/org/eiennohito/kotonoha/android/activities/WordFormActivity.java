@@ -7,8 +7,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
+import android.view.*;
 import android.widget.TextView;
 import org.eiennohito.kotonoha.android.R;
 import org.eiennohito.kotonoha.android.services.DataService;
@@ -34,7 +33,7 @@ public class WordFormActivity extends Activity {
     View
   }
 
-  private static final int[] MARK_BTNS = new int[] {
+  private static final int[] MARK_BTNS = new int[]{
     R.id.Mark1,
     R.id.Mark2,
     R.id.Mark3,
@@ -42,7 +41,7 @@ public class WordFormActivity extends Activity {
     R.id.Mark5
   };
 
-  private static final int[] ALL_ELEMS = new int[] {
+  private static final int[] ALL_ELEMS = new int[]{
     R.id.Example,
     //R.id.ExampleArea,
     R.id.Meaning,
@@ -61,14 +60,34 @@ public class WordFormActivity extends Activity {
   private final static long CHANGE_TIME = 100;
 
   @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.word_frm_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+      case R.id.badCard:
+        markCardAsBad();
+        return true;
+      default:
+        return super.onOptionsItemSelected(item);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+  }
+
+  private void markCardAsBad() {
+
+  }
+
+  @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     connectToService();
 
     this.setContentView(R.layout.word_form);
-
-
 
     View exbtn = findViewById(R.id.ExampleArea);
     exbtn.setOnTouchListener(new View.OnTouchListener() {
@@ -94,6 +113,7 @@ public class WordFormActivity extends Activity {
         return true;
       }
     });
+
 
     for (int i = 0; i < MARK_BTNS.length; ++i) {
       int id = MARK_BTNS[i];
@@ -144,6 +164,7 @@ public class WordFormActivity extends Activity {
 
   /**
    * Changes current example to next or previous.
+   *
    * @param prev true if previous
    */
   private void changeExample(boolean prev) {
@@ -165,7 +186,7 @@ public class WordFormActivity extends Activity {
 
     Example ex = examples.get(exampleIndex);
     String exString = String.format("[%d/%d]\n%s\n%s",
-      exampleIndex + 1, examples.size(), ex.getExample(), ex.getTranslation() );
+      exampleIndex + 1, examples.size(), ex.getExample(), ex.getTranslation());
     setText(R.id.Example, exString);
   }
 
@@ -208,7 +229,6 @@ public class WordFormActivity extends Activity {
   }
 
   /**
-   *
    * @return how much time word processing took in seconds
    */
   private double calcTime() {
@@ -245,7 +265,7 @@ public class WordFormActivity extends Activity {
     }
 
     public void onServiceConnected(ComponentName name, IBinder binder) {
-      service = ((DataService.DataServiceBinder)binder).getService();
+      service = ((DataService.DataServiceBinder) binder).getService();
     }
   };
 

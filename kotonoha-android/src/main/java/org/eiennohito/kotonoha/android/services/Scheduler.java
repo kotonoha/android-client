@@ -2,6 +2,7 @@ package org.eiennohito.kotonoha.android.services;
 
 import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.rest.RestRequest;
+import org.eiennohito.kotonoha.android.util.WrappedRunnable;
 import org.joda.time.Duration;
 
 import java.util.Map;
@@ -20,16 +21,22 @@ public class Scheduler {
     return single.schedule(toRun);
   }
 
-  public static Future<?> schedule(Runnable toRun) {
-    return defaultScheduler.schedule(toRun);
+  public static WrappedRunnable schedule(Runnable toRun) {
+    WrappedRunnable wr = new WrappedRunnable(toRun);
+    defaultScheduler.schedule(wr.wrapped());
+    return wr;
   }
 
-  public static Future<?> schedule(String name, Runnable toRun) {
-    return defaultScheduler.schedule(new TimedRunnable(name, toRun));
+  public static WrappedRunnable schedule(String name, Runnable toRun) {
+    WrappedRunnable wr = new WrappedRunnable(new TimedRunnable(name, toRun));
+    defaultScheduler.schedule(wr.wrapped());
+    return wr;
   }
 
-  public static ScheduledFuture<?> delayed(Runnable runnable, Duration period) {
-    return timer.schedule(runnable, period.getMillis(), TimeUnit.MILLISECONDS);
+  public static WrappedRunnable delayed(Runnable runnable, Duration period) {
+    WrappedRunnable wr = new WrappedRunnable(runnable);
+    timer.schedule(wr.wrapped(), period.getMillis(), TimeUnit.MILLISECONDS);
+    return wr;
   }
 
   public static ScheduledFuture<?> every(Runnable runnable, Duration period) {

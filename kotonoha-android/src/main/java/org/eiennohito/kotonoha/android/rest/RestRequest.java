@@ -50,6 +50,7 @@ abstract public class RestRequest<Resp> {
 
     HttpResponse response;
     try {
+      Log.d(this, "Executing request to: " + req.getURI());
       response = svc.getClient().execute(req);
     } catch (IOException ex) {
       Log.e(this, "Couldn't execute http request", ex);

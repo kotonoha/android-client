@@ -1,37 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical" android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-	
-	<TextView android:layout_gravity="center" style="@style/wrapped" android:id="@+id/Writing" 
-			android:text="読み"
-            android:textSize="30dp" android:minLines="1" android:visibility="invisible" />
-    <TextView style="@style/wrapped" android:id="@+id/Reading" android:text="よみ" android:layout_marginTop="5dp" android:minLines="2" />
-    <TextView style="@style/wrapped" android:id="@+id/Meaning" android:text="Reading" android:layout_marginTop="10dp" android:minLines="3" />
+              android:orientation="vertical" android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
+  <TextView android:layout_gravity="center" style="@style/wrapped" android:id="@+id/Writing"
+            android:text="読み"
+            android:textSize="30dp" android:minLines="1" android:visibility="invisible"/>
+  <TextView style="@style/wrapped" android:id="@+id/Reading" android:text="よみ" android:layout_marginTop="5dp"
+            android:minLines="2"/>
+  <TextView style="@style/wrapped" android:id="@+id/Meaning" android:text="Reading" android:layout_marginTop="10dp"
+            android:minLines="3"/>
 
-    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1" android:text="Some Example\nAnother example" >
-        <Button android:layout_height="match_parent" android:layout_width="match_parent" android:id="@+id/ExampleArea" android:background="#00000000" />        
-        <TextView style="@style/wrapped" android:id="@+id/Example"
-              android:layout_width="match_parent" />
-    </FrameLayout>
-    
-    <!--<TextView android:layout_height="fill_parent" android:layout_width="wrap_content" android:layout_weight="1" />-->
-    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
-        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:gravity="bottom"
-		android:layout_height="wrap_content">
-            <Button android:text="1" android:id="@+id/Mark1"
-                style="@style/markBtn"/>
-            <Button android:text="2" android:id="@+id/Mark2"
-                style="@style/markBtn"/>                                            
-            <Button android:text="3" android:id="@+id/Mark3"
-                style="@style/markBtn"/>
-            <Button android:text="4" android:id="@+id/Mark4"
-                style="@style/markBtn"/>
-            <Button android:text="5" android:id="@+id/Mark5"
-                style="@style/markBtn"/>
-	    </LinearLayout>
-        <Button android:layout_height="wrap_content" android:layout_width="match_parent"
-                android:text="@string/next_word" android:id="@+id/nextWordBtn" android:visibility="invisible" />
-    </FrameLayout>
+  <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1"
+               android:text="Some Example\nAnother example">
+    <Button android:layout_height="match_parent" android:layout_width="match_parent" android:id="@+id/ExampleArea"
+            android:background="#00000000"/>
+    <TextView style="@style/wrapped" android:id="@+id/Example"
+              android:layout_width="match_parent"/>
+  </FrameLayout>
+
+  <!--<TextView android:layout_height="fill_parent" android:layout_width="wrap_content" android:layout_weight="1" />-->
+  <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:gravity="bottom"
+                  android:layout_height="wrap_content">
+      <Button android:text="1" android:id="@+id/Mark1"
+              style="@style/markBtn"/>
+      <Button android:text="2" android:id="@+id/Mark2"
+              style="@style/markBtn"/>
+      <Button android:text="3" android:id="@+id/Mark3"
+              style="@style/markBtn"/>
+      <Button android:text="4" android:id="@+id/Mark4"
+              style="@style/markBtn"/>
+      <Button android:text="5" android:id="@+id/Mark5"
+              style="@style/markBtn"/>
+    </LinearLayout>
+    <Button android:layout_height="wrap_content" android:layout_width="match_parent"
+            android:text="@string/next_word" android:id="@+id/nextWordBtn" android:visibility="invisible"/>
+  </FrameLayout>
 
 </LinearLayout>
