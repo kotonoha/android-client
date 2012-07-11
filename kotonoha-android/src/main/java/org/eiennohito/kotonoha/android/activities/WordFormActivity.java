@@ -256,6 +256,7 @@ public class WordFormActivity extends Activity {
       if (wc == null) {
         Log.w("Kotonoha", "Returned nothing, closing an activity");
         finish();
+        return;
       }
       currentWord = wc.word;
       currentCard = wc.card;

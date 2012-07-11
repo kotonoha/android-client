@@ -44,9 +44,9 @@ public class SendChangeWordStatusES extends EventualService {
         }
       }, new SuccessCallback<List<ChangeWordStatusEvent>, Values>() {
       @Override
-      public void onOk(List<ChangeWordStatusEvent> changeWordStatusEvents, Values values) {
+      public void onOk(List<ChangeWordStatusEvent> evnts, Values values) {
+        esvc.delete(evnts);
         Log.d(SendChangeWordStatusES.this, "Change status went successfully");
-        //do nothing
       }
     }
     ));

@@ -45,4 +45,8 @@ public class EventService implements Purgeable {
       throw new RuntimeException(e);
     }
   }
+
+  public void delete(List<ChangeWordStatusEvent> evnts) {
+    dao.delete(evnts);
+  }
 }
