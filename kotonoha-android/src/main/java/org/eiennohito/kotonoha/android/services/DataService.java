@@ -36,6 +36,7 @@ import org.eiennohito.kotonoha.android.util.ErrorCallback;
 import org.eiennohito.kotonoha.android.util.SuccessCallback;
 import org.eiennohito.kotonoha.android.util.ValueCallback;
 import org.eiennohito.kotonoha.android.util.WordsLoadedCallback;
+import org.eiennohito.kotonoha.model.events.ChangeWordStatusEvent;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
@@ -57,6 +58,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   WordService wordSvc;
   ConfigService confSvc;
   RestService restSvc;
+  EventService eventSvc;
 
   /**
    * All web service calls should be done through this scheduler.
@@ -76,6 +78,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     markSvc = new MarkService(this);
     cardSvc = new CardService(this);
     wordSvc = new WordService(this);
+    eventSvc = new EventService(this);
 
     AuthObject ao = confSvc.config().getAuthObject();
     if (ao != null) {
@@ -125,7 +128,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   }
 
   public void setWordAsBad(Long wordId) {
-
+    ChangeWordStatusEvent cv = ChangeWordStatusEvent.checkWord(wordId);
+    eventSvc.publishChangeStatus(cv);
   }
 
   public WordWithCard getNextWord() {

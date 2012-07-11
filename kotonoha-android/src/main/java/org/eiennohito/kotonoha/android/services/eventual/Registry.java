@@ -41,6 +41,7 @@ public class Registry implements Runnable {
       Scheduler.schedule(svc).doAfter(new Runnable() {
         @Override
         public void run() {
+          svcs.add(svc);
           Scheduler.delayed(this, Duration.standardSeconds(20));
         }
       });

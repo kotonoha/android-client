@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @since 24.04.12
  */
 public class WrappedRunnable {
-  AtomicBoolean finished = new AtomicBoolean(true);
+  AtomicBoolean finished = new AtomicBoolean(false);
   private final List<Runnable> after = new ArrayList<Runnable>();
   private final Runnable inner;
 

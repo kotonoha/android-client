@@ -78,7 +78,9 @@ public class WordFormActivity extends Activity {
   }
 
   private void markCardAsBad() {
-
+    if (currentCard != null && currentWord != null) {
+      service.setWordAsBad(currentWord.getId());
+    }
   }
 
   @Override
