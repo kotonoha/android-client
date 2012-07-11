@@ -1,5 +1,6 @@
 package org.eiennohito.kotonoha.android.util;
 
+import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.services.Scheduler;
 
 import java.util.ArrayList;
@@ -37,6 +38,9 @@ public class WrappedRunnable {
         try {
           inner.run();
           finished.set(true);
+        } catch (RuntimeException e) {
+          Log.e(WrappedRunnable.this, "Error in inner block", e);
+          throw e;
         } finally {
           synchronized (after) {
             for (Runnable r : after) {

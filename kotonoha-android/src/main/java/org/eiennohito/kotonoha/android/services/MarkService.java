@@ -129,6 +129,7 @@ public class MarkService implements Purgeable {
     try {
       QueryBuilder<MarkEvent, Long> q = markDao.queryBuilder();
       q.where().eq("operation", 0);
+      q.setCountOf(true);
       return markDao.countOf(q.prepare());
     } catch (SQLException e) {
       throw new RuntimeException(e);
