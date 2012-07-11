@@ -17,10 +17,7 @@ package org.eiennohito.kotonoha.android.services;
 
 import android.util.Log;
 import com.j256.ormlite.dao.RuntimeExceptionDao;
-import com.j256.ormlite.stmt.DeleteBuilder;
-import com.j256.ormlite.stmt.PreparedDelete;
-import com.j256.ormlite.stmt.PreparedUpdate;
-import com.j256.ormlite.stmt.UpdateBuilder;
+import com.j256.ormlite.stmt.*;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.joda.time.DateTime;
@@ -36,7 +33,7 @@ import java.util.concurrent.Callable;
  */
 public class MarkService implements Purgeable {
   private DataService service;
-  private final RuntimeExceptionDao<MarkEvent,Long> markDao;
+  private final RuntimeExceptionDao<MarkEvent, Long> markDao;
 
   public MarkService(DataService service) {
     this.service = service;
@@ -58,7 +55,7 @@ public class MarkService implements Purgeable {
 
   public void submit() {
     try {
-      UpdateBuilder<MarkEvent,Long> ub = markDao.updateBuilder();
+      UpdateBuilder<MarkEvent, Long> ub = markDao.updateBuilder();
       ub.where().eq("operation", 0);
       ub.updateColumnValue("operation", 1);
       PreparedUpdate<MarkEvent> pu = ub.prepare();
@@ -66,7 +63,7 @@ public class MarkService implements Purgeable {
     } catch (SQLException e) {
       Log.e("Kotonoha", "Error updating marks for submit", e);
     }
-    
+
     Scheduler.schedule(new Runnable() {
       public void run() {
         Callable<List<MarkEvent>> markC = new Callable<List<MarkEvent>>() {
@@ -91,7 +88,7 @@ public class MarkService implements Purgeable {
 
   private void setOperation(List<Long> ids, int value) {
     try {
-      UpdateBuilder<MarkEvent,Long> ub = markDao.updateBuilder();
+      UpdateBuilder<MarkEvent, Long> ub = markDao.updateBuilder();
       ub.where().in("id", ids);
       ub.updateColumnValue("operation", value);
       PreparedUpdate<MarkEvent> pu = ub.prepare();
@@ -107,7 +104,7 @@ public class MarkService implements Purgeable {
 
   public void clear() {
     try {
-      DeleteBuilder<MarkEvent,Long> db = markDao.deleteBuilder();
+      DeleteBuilder<MarkEvent, Long> db = markDao.deleteBuilder();
       db.where().ne("operation", 0);
       PreparedDelete<MarkEvent> pq = db.prepare();
       markDao.delete(pq);
@@ -126,5 +123,15 @@ public class MarkService implements Purgeable {
 
   public void purge() {
     markDao.updateRaw("delete from markevent");
+  }
+
+  public long countMarks() {
+    try {
+      QueryBuilder<MarkEvent, Long> q = markDao.queryBuilder();
+      q.where().eq("operation", 0);
+      return markDao.countOf(q.prepare());
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

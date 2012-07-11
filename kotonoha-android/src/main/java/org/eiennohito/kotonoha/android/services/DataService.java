@@ -31,6 +31,7 @@ import org.eiennohito.kotonoha.android.json.GsonInstance;
 import org.eiennohito.kotonoha.android.rest.request.GetScheduledCards;
 import org.eiennohito.kotonoha.android.rest.request.GetStatusRequest;
 import org.eiennohito.kotonoha.android.rest.request.PostMarkEvents;
+import org.eiennohito.kotonoha.android.services.eventual.EventualSvcRegistry;
 import org.eiennohito.kotonoha.android.transfer.WordWithCard;
 import org.eiennohito.kotonoha.android.util.ErrorCallback;
 import org.eiennohito.kotonoha.android.util.SuccessCallback;
@@ -42,6 +43,7 @@ import org.eiennohito.kotonoha.model.learning.Container;
 import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 import org.eiennohito.kotonoha.rest.AuthObject;
+import org.joda.time.Duration;
 import org.scribe.model.Token;
 
 import java.util.Arrays;
@@ -59,6 +61,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   ConfigService confSvc;
   RestService restSvc;
   EventService eventSvc;
+  EventualSvcRegistry esReg;
 
   /**
    * All web service calls should be done through this scheduler.
@@ -84,6 +87,9 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     if (ao != null) {
       createRestSvc(ao);
     }
+
+    esReg = new EventualSvcRegistry(this);
+    Scheduler.delayed(esReg, Duration.standardMinutes(1));
   }
 
   public void createRestSvc(AuthObject ao) {
@@ -207,7 +213,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   }
 
   public List<Purgeable> purgeables() {
-    return Arrays.asList(markSvc, cardSvc, wordSvc);
+    return Arrays.asList(markSvc, cardSvc, wordSvc, eventSvc);
   }
 
   public void postStatus(ValueCallback<String> callback) {
@@ -254,5 +260,29 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     //Scheduler.destroy();
     httpClient.close();
     super.onDestroy();
+  }
+
+  public MarkService getMarkSvc() {
+    return markSvc;
+  }
+
+  public CardService getCardSvc() {
+    return cardSvc;
+  }
+
+  public WordService getWordSvc() {
+    return wordSvc;
+  }
+
+  public ConfigService getConfSvc() {
+    return confSvc;
+  }
+
+  public RestService getRestSvc() {
+    return restSvc;
+  }
+
+  public EventService getEventSvc() {
+    return eventSvc;
   }
 }
