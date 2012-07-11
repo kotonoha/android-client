@@ -17,6 +17,7 @@ import org.eiennohito.kotonoha.model.learning.Word;
 import org.eiennohito.kotonoha.model.learning.WordCard;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -211,7 +212,15 @@ public class WordFormActivity extends Activity {
 
     exampleIndex = -1;
     wordMapTime = System.currentTimeMillis();
-    examples = new ArrayList<Example>(currentWord.getExamples());
+    examples = new ArrayList<Example>(currentWord.getExamples().size());
+    HashSet<String> exs = new HashSet<String>();
+    for (Example ex : currentWord.getExamples()) {
+      String str = ex.getExample();
+      if (!exs.contains(str)) {
+        examples.add(ex);
+        exs.add(str);
+      }
+    }
     changeExample(false);
   }
 
