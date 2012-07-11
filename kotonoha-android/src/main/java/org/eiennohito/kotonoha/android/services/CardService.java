@@ -19,14 +19,19 @@ import com.j256.ormlite.dao.RuntimeExceptionDao;
 import com.j256.ormlite.stmt.DeleteBuilder;
 import com.j256.ormlite.stmt.PreparedDelete;
 import com.j256.ormlite.stmt.QueryBuilder;
+import de.akquinet.android.androlog.Log;
 import org.eiennohito.kotonoha.android.db.DatabaseHelper;
 import org.eiennohito.kotonoha.android.util.ScheduledWordComparator;
 import org.eiennohito.kotonoha.model.events.MarkEvent;
 import org.eiennohito.kotonoha.model.learning.ItemLearning;
 import org.eiennohito.kotonoha.model.learning.WordCard;
+import org.joda.time.DateTime;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeSet;
 
 /**
  * @author eiennohito
@@ -35,9 +40,9 @@ import java.util.*;
 public class CardService implements Purgeable {
   private final Object syncRoot = new Object();
   private final DataService dataService;
-  private final RuntimeExceptionDao<WordCard,Long> cardDao;
+  private final RuntimeExceptionDao<WordCard, Long> cardDao;
   private TreeSet<WordCard> cards;
-  private final RuntimeExceptionDao<ItemLearning,Long> learningDao;
+  private final RuntimeExceptionDao<ItemLearning, Long> learningDao;
 
 
   private static TreeSet<WordCard> emptySet() {
@@ -50,6 +55,7 @@ public class CardService implements Purgeable {
     cardDao = helper.getWordCardDao();
     learningDao = helper.getLearningDao();
     clear();
+    removeStale();
     cards = loadCards();
   }
 
@@ -83,8 +89,9 @@ public class CardService implements Purgeable {
   }
 
   public void process(Collection<WordCard> crds) {
-    for (WordCard card: crds) {
+    for (WordCard card : crds) {
       card.setStatus(0);
+      card.setGotOn(DateTime.now());
       cardDao.createIfNotExists(card);
     }
     reloadCards();
@@ -105,7 +112,7 @@ public class CardService implements Purgeable {
 
   public void removeCardsFor(List<MarkEvent> marks) {
     List<Long> ids = new ArrayList<Long>(marks.size());
-    for (MarkEvent e: marks) {
+    for (MarkEvent e : marks) {
       ids.add(e.getCard());
     }
     dropCardsByIds(ids);
@@ -116,13 +123,24 @@ public class CardService implements Purgeable {
     cardDao.deleteIds(ids);
   }
 
+  public void removeStale() {
+    try {
+      DeleteBuilder<WordCard, Long> db = cardDao.deleteBuilder();
+      db.where().le("gotOn", DateTime.now().minusHours(4)).and().eq("status", 0);
+      int deleted = cardDao.delete(db.prepare());
+      Log.d(this, String.format("deleted %d stale messages", deleted));
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private void removeLearningForCards(Collection<Long> ids) {
     //"delete from itemlearning where id in (select w.learning from wordcard w where w.id in (...))"
     try {
-      QueryBuilder<WordCard,Long> cb = cardDao.queryBuilder();
+      QueryBuilder<WordCard, Long> cb = cardDao.queryBuilder();
       cb.selectColumns("learning_id");
       cb.where().in("id", ids);
-      DeleteBuilder<ItemLearning,Long> db = learningDao.deleteBuilder();
+      DeleteBuilder<ItemLearning, Long> db = learningDao.deleteBuilder();
       db.where().in("id", cb);
       PreparedDelete<ItemLearning> q = db.prepare();
       learningDao.delete(q);
