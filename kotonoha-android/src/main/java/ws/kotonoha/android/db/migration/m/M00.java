@@ -5,6 +5,8 @@ import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import ws.kotonoha.android.db.DatabaseHelper;
 import ws.kotonoha.android.db.migration.Migration;
+import ws.kotonoha.server.model.events.AddWordEvent;
+import ws.kotonoha.server.model.events.ChangeWordStatusEvent;
 import ws.kotonoha.server.model.events.MarkEvent;
 import ws.kotonoha.server.model.learning.Example;
 import ws.kotonoha.server.model.learning.ItemLearning;
@@ -24,5 +26,7 @@ public class M00 extends Migration {
     TableUtils.createTable(src, ItemLearning.class);
     TableUtils.createTable(src, Example.class);
     TableUtils.createTable(src, MarkEvent.class);
+    TableUtils.createTable(src, AddWordEvent.class);
+    TableUtils.createTable(src, ChangeWordStatusEvent.class);
   }
 }
