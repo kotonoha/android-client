@@ -2,23 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="fill_parent"
               android:layout_height="fill_parent">
-  <TextView android:layout_gravity="center" style="@style/wrapped" android:id="@+id/Writing"
-            android:text="読み"
-            android:textSize="30dp" android:minLines="1" android:visibility="invisible"/>
-  <TextView style="@style/wrapped" android:id="@+id/Reading" android:text="よみ" android:layout_marginTop="5dp"
-            android:minLines="2"/>
-  <TextView style="@style/wrapped" android:id="@+id/Meaning" android:text="Reading" android:layout_marginTop="10dp"
-            android:minLines="3"/>
 
-  <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1"
-               android:text="Some Example\nAnother example">
+
+  <FrameLayout android:layout_width="match_parent"
+               android:layout_height="match_parent"
+               android:layout_weight="1">
+    <LinearLayout
+      android:orientation="vertical"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content">
+      <TextView android:layout_gravity="center" style="@style/wrapped" android:id="@+id/Writing"
+                android:text="読み"
+                android:textSize="30dp" android:minLines="1" android:visibility="invisible"/>
+      <TextView style="@style/wrapped" android:id="@+id/Reading" android:text="よみ" android:layout_marginTop="5dp"
+                android:minLines="2"/>
+      <TextView style="@style/wrapped" android:id="@+id/Meaning" android:text="Reading" android:layout_marginTop="10dp"
+                android:minLines="3"/>
+      <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView style="@style/wrapped" android:id="@+id/Example"
+                  android:layout_width="match_parent"/>
+      </ScrollView>
+
+    </LinearLayout>
     <Button android:layout_height="match_parent" android:layout_width="match_parent" android:id="@+id/ExampleArea"
             android:background="#00000000"/>
-    <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
-      <TextView style="@style/wrapped" android:id="@+id/Example"
-                android:layout_width="match_parent"/>
-    </ScrollView>
+
   </FrameLayout>
+
 
   <!--<TextView android:layout_height="fill_parent" android:layout_width="wrap_content" android:layout_weight="1" />-->
   <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">

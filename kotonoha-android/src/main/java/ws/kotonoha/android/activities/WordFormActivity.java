@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.*;
 import android.widget.TextView;
 import ws.kotonoha.android.R;
@@ -92,6 +95,23 @@ public class WordFormActivity extends Activity {
 
     this.setContentView(R.layout.word_form);
 
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    prefs.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
+      @Override
+      public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals("perf_fontsize")) {
+          float sz = Float.parseFloat(sharedPreferences.getString(key, "1.0"));
+          changeFontScale(sz);
+        }
+      }
+    });
+
+
+    String sz = prefs.getString("perf_fontsize", "1.0");
+    float fsz = Float.parseFloat(sz);
+    changeFontScale(fsz);
+
+
     View exbtn = findViewById(R.id.ExampleArea);
     exbtn.setOnTouchListener(new View.OnTouchListener() {
       public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -128,6 +148,23 @@ public class WordFormActivity extends Activity {
         view.setVisibility(View.INVISIBLE);
         massSetVisibility(ALL_ELEMS, View.INVISIBLE);
         nextWord();
+      }
+    });
+  }
+
+  private static final int[] ALL_TEXT = {R.id.Example, R.id.Writing, R.id.Reading, R.id.Meaning};
+  private static final float[] TEXT_SIZES = {15, 25, 15, 15};
+
+  private void changeFontScale(final float fsz) {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        for (int i = 0; i < ALL_TEXT.length; ++i) {
+          int id = ALL_TEXT[i];
+          float sz = TEXT_SIZES[i] * fsz;
+          TextView tv = (TextView) findViewById(id);
+          tv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, sz);
+        }
       }
     });
   }

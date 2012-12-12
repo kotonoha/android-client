@@ -30,10 +30,13 @@
     </activity>
 
     <activity android:name="ws.kotonoha.android.activities.WordFormActivity" android:label="@string/word_form_name">
-
     </activity>
 
     <activity android:name="ws.kotonoha.android.voice.VoiceRecognition" android:label="@string/voice_record_act_name">
+    </activity>
+
+    <activity android:name=".activities.SettingsActivity">
+
     </activity>
 
     <service android:name="ws.kotonoha.android.services.DataService" label="Kotonoha Data Service">

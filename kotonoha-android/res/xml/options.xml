@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <ListPreference
+    android:key="perf_fontsize"
+    android:title="@string/perf_fontsize"
+    android:dialogTitle="@string/perf_fontsize"
+    android:entries="@array/perf_fontsize_entries"
+    android:entryValues="@array/perf_fontsize_entry_vals"
+    android:defaultValue="1.0"/>
+</PreferenceScreen>

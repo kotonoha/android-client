@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import de.akquinet.android.androlog.Log;
@@ -63,10 +66,29 @@ public class KotonohaMain extends Activity {
     startActivityForResult(i, 520);
   }
 
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.menu.main_frm_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+      case R.id.menu_main_options:
+        startActivity(new Intent(this, SettingsActivity.class));
+        return true;
+      default:
+        return false;
+    }
+  }
+
   private void handleQrLogin() {
     IntentIntegrator ii = new IntentIntegrator(this);
     ii.initiateScan();
   }
+
 
   /**
    * Called when the activity is first created.
