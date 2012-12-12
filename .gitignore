@@ -1,5 +1,7 @@
 .idea/
 .idea_modules/
 target/
+classes/
 gen/
 *.iml
+ApiCodes.java

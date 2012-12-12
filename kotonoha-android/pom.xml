@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -25,14 +25,25 @@
       <artifactId>androlog</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eiennohito</groupId>
+      <groupId>ws.kotonoha</groupId>
       <artifactId>kotonoha-model</artifactId>
       <version>0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.j256.ormlite</groupId>
       <artifactId>ormlite-android</artifactId>
-      <version>4.33</version>
+      <version>4.42</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>1.47</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.9</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
