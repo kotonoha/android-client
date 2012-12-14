@@ -55,6 +55,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
   @Override
   public void onUpgrade(SQLiteDatabase database, ConnectionSource connectionSource, int oldVersion, int newVersion) {
     if (newVersion > oldVersion) {
+      Log.i(String.format("Performing migration from %d to %d", oldVersion, newVersion));
       for (int ver = oldVersion; ver < newVersion; ++ver) {
         try {
           Migration migration = Migrations.MIGRATION_ARRAY[ver];

@@ -28,11 +28,7 @@ import ws.kotonoha.server.model.learning.ItemLearning;
 import ws.kotonoha.server.model.learning.WordCard;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.TreeSet;
-import java.util.concurrent.Callable;
+import java.util.*;
 
 /**
  * @author eiennohito
@@ -89,25 +85,22 @@ public class CardService implements Purgeable {
     }
   }
 
-  public synchronized void process(final Collection<WordCard> crds) {
-    final long maxid = learningDao.queryRawValue("select max(l.id) from itemlearning l");
+  private Random rand = new Random();
 
-    cardDao.callBatchTasks(new Callable<Object>() {
-      @Override
-      public Object call() throws Exception {
-        long lid = maxid + 1;
-        for (WordCard card : crds) {
-          card.setStatus(0);
-          card.setGotOn(DateTime.now());
-          ItemLearning lrn = card.getLearning();
-          lrn.setId(lid);
-          lid += 1;
-          learningDao.create(lrn);
-          cardDao.createIfNotExists(card);
-        }
-        return null;
+  public synchronized void process(final Collection<WordCard> crds) {
+
+    long lid = rand.nextLong();
+    for (WordCard card : crds) {
+      card.setStatus(0);
+      card.setGotOn(DateTime.now());
+      ItemLearning lrn = card.getLearning();
+      if (lrn != null) {
+        lrn.setId(lid);
+        lid += 1;
+        learningDao.create(lrn);
       }
-    });
+      cardDao.createIfNotExists(card);
+    }
 
     reloadCards();
   }
