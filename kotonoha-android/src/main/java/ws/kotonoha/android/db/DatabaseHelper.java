@@ -26,10 +26,7 @@ import ws.kotonoha.android.db.migration.Migrations;
 import ws.kotonoha.server.model.events.AddWordEvent;
 import ws.kotonoha.server.model.events.ChangeWordStatusEvent;
 import ws.kotonoha.server.model.events.MarkEvent;
-import ws.kotonoha.server.model.learning.Example;
-import ws.kotonoha.server.model.learning.ItemLearning;
-import ws.kotonoha.server.model.learning.Word;
-import ws.kotonoha.server.model.learning.WordCard;
+import ws.kotonoha.server.model.learning.*;
 
 import java.sql.SQLException;
 
@@ -55,7 +52,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
   @Override
   public void onUpgrade(SQLiteDatabase database, ConnectionSource connectionSource, int oldVersion, int newVersion) {
     if (newVersion > oldVersion) {
-      Log.i(String.format("Performing migration from %d to %d", oldVersion, newVersion));
+      Log.i(this, String.format("Performing migration from %d to %d", oldVersion, newVersion));
       for (int ver = oldVersion; ver < newVersion; ++ver) {
         try {
           Migration migration = Migrations.MIGRATION_ARRAY[ver];
@@ -99,10 +96,13 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     try {
       return RuntimeExceptionDao.createDao(connectionSource, clazz);
     } catch (SQLException e) {
-      Log.e("K/DH", "Error in creating table", e);
+      Log.e(this, "Error in creating table", e);
       throw new RuntimeException(e);
     }
   }
 
 
+  public RuntimeExceptionDao<ReviewCard, String> getReviewDao() {
+    return createDaoForClass(ReviewCard.class);
+  }
 }

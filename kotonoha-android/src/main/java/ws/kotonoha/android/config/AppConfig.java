@@ -1,6 +1,7 @@
 package ws.kotonoha.android.config;
 
-import org.eiennohito.kotonoha.rest.AuthObject;
+
+import ws.kotonoha.server.rest.AuthObject;
 
 /**
  * @author eiennohito

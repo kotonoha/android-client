@@ -28,13 +28,13 @@
       <groupId>org.eiennohito</groupId>
       <artifactId>kotonoha-android</artifactId>
       <type>apk</type>
-      <version>0.1-SNAPSHOT</version>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.eiennohito</groupId>
       <artifactId>kotonoha-android</artifactId>
       <type>jar</type>
-      <version>0.1-SNAPSHOT</version>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

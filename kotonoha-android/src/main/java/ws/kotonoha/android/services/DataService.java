@@ -25,7 +25,6 @@ import com.j256.ormlite.android.apptools.OrmLiteBaseService;
 import com.j256.ormlite.misc.TransactionManager;
 import de.akquinet.android.androlog.Log;
 import org.apache.http.params.HttpConnectionParams;
-import org.eiennohito.kotonoha.rest.AuthObject;
 import org.joda.time.Duration;
 import org.scribe.model.Token;
 import ws.kotonoha.android.db.DatabaseHelper;
@@ -45,6 +44,7 @@ import ws.kotonoha.server.model.events.MarkEvent;
 import ws.kotonoha.server.model.learning.Container;
 import ws.kotonoha.server.model.learning.Word;
 import ws.kotonoha.server.model.learning.WordCard;
+import ws.kotonoha.server.rest.AuthObject;
 
 import java.util.Arrays;
 import java.util.List;
@@ -163,7 +163,8 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
   public void loadWordsAsync(final WordsLoadedCallback callback) {
     //int count = Math.min(49, 25 + cardSvc.countPresent());
     int count = 49;
-    GetScheduledCards gsc = new GetScheduledCards(restSvc, count, new ValueCallback<Container>() {
+    int skip = Math.min(20, Math.max(0, cardSvc.countPresent() - 2)); //skip less than 20 and more than 0
+    GetScheduledCards gsc = new GetScheduledCards(restSvc, count, skip, new ValueCallback<Container>() {
       public void process(Container val) {
         callback.wordsLoaded(loadContainer(val));
       }
@@ -183,7 +184,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
       TransactionManager.callInTransaction(getConnectionSource(), new Callable<Object>() {
         public Object call() throws Exception {
           wordSvc.process(val.getWords());
-          cardSvc.process(val.getCards());
+          cardSvc.process(val.getCards(), val.getSequence());
           return null;
         }
       });

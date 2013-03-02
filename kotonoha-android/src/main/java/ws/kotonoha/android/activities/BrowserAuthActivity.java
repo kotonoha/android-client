@@ -19,7 +19,7 @@ import java.io.ByteArrayInputStream;
  */
 public class BrowserAuthActivity extends Activity {
 
-  private static final String url = "http://kotonoha.ws/oauth/request";
+  private static final String url = "http://weaboo.net:9867/oauth/request";
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {

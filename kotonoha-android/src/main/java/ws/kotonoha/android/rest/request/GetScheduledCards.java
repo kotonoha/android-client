@@ -12,8 +12,8 @@ import ws.kotonoha.server.model.learning.Container;
  * @since 10.03.12
  */
 public class GetScheduledCards extends RestGetRequest<Container> {
-  public GetScheduledCards(RestService client, int howMany, ValueCallback<Container> callback) {
-    super(client, "words/scheduled/" + howMany, callback);
+  public GetScheduledCards(RestService client, int howMany, int skip, ValueCallback<Container> callback) {
+    super(client, String.format("words/scheduled/%d?skip=%d", howMany, skip), callback);
   }
 
   private GsonObjectParser<Container> parser = new GsonObjectParser<Container>(Container.class);

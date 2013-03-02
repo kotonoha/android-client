@@ -11,6 +11,7 @@
   <modules>
     <module>kotonoha-android</module>
     <module>kotonoha-android-it</module>
+    <module>android-tools</module>
   </modules>
 
   <dependencyManagement>
@@ -19,7 +20,7 @@
         <groupId>com.google.android</groupId>
         <artifactId>android</artifactId>
         <version>
-          4.0.1.2
+          4.1.1.4
         </version>
         <scope>provided</scope>
       </dependency>
@@ -27,7 +28,7 @@
         <groupId>com.google.android</groupId>
         <artifactId>android-test</artifactId>
         <version>
-          4.0.1.2
+          4.1.1.4
         </version>
         <scope>provided</scope>
       </dependency>
@@ -42,7 +43,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.8.1</version>
+        <version>4.9</version>
         <scope>provided</scope>
       </dependency>
     </dependencies>

@@ -1,12 +1,12 @@
 package ws.kotonoha.android.services;
 
 import org.apache.http.client.HttpClient;
-import org.eiennohito.kotonoha.rest.KotonohaApi;
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Token;
 import org.scribe.oauth.OAuthService;
 import ws.kotonoha.android.util.ApiCodes;
+import ws.kotonoha.server.rest.KotonohaApi;
 
 /**
  * @author eiennohito

@@ -11,7 +11,7 @@
 
   <groupId>org.eiennohito</groupId>
   <artifactId>kotonoha-android</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>apk</packaging>
   <name>kotonoha-android - Application</name>
 
@@ -27,12 +27,12 @@
     <dependency>
       <groupId>ws.kotonoha</groupId>
       <artifactId>kotonoha-model</artifactId>
-      <version>0.1-SNAPSHOT</version>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.j256.ormlite</groupId>
       <artifactId>ormlite-android</artifactId>
-      <version>4.42</version>
+      <version>4.43</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>

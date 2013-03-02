@@ -22,9 +22,11 @@ import com.j256.ormlite.stmt.QueryBuilder;
 import de.akquinet.android.androlog.Log;
 import org.joda.time.DateTime;
 import ws.kotonoha.android.db.DatabaseHelper;
-import ws.kotonoha.android.util.ScheduledWordComparator;
+import ws.kotonoha.android.util.ReviewCardComparator;
+import ws.kotonoha.server.model.Oid;
 import ws.kotonoha.server.model.events.MarkEvent;
 import ws.kotonoha.server.model.learning.ItemLearning;
+import ws.kotonoha.server.model.learning.ReviewCard;
 import ws.kotonoha.server.model.learning.WordCard;
 
 import java.sql.SQLException;
@@ -38,57 +40,74 @@ public class CardService implements Purgeable {
   private final Object syncRoot = new Object();
   private final DataService dataService;
   private final RuntimeExceptionDao<WordCard, String> cardDao;
-  private TreeSet<WordCard> cards;
+  private Map<String, WordCard> cards = new HashMap<String, WordCard>();
   private final RuntimeExceptionDao<ItemLearning, Long> learningDao;
+  private final RuntimeExceptionDao<ReviewCard, String> reviewDao;
+  private Queue<ReviewCard> reviewCards = makeQueue();
 
-
-  private static TreeSet<WordCard> emptySet() {
-    return new TreeSet<WordCard>(new ScheduledWordComparator());
+  private static PriorityQueue<ReviewCard> makeQueue() {
+    return new PriorityQueue<ReviewCard>(80, new ReviewCardComparator());
   }
+
 
   public CardService(DataService dataService) {
     this.dataService = dataService;
     DatabaseHelper helper = dataService.getHelper();
     cardDao = helper.getWordCardDao();
     learningDao = helper.getLearningDao();
+    reviewDao = helper.getReviewDao();
     clear();
     removeStale();
     cards = loadCards();
   }
 
-  private TreeSet<WordCard> loadCards() {
+  private Map<String, WordCard> loadCards() {
     List<WordCard> cards = cardDao.queryForEq("status", 0);
-    TreeSet<WordCard> set = emptySet();
-    set.addAll(cards);
-    return set;
+    Map<String, WordCard> map = new HashMap<String, WordCard>();
+    for (WordCard card : cards) {
+      map.put(card.getId(), card);
+    }
+    return map;
   }
 
   public boolean hasNextCard() {
     synchronized (syncRoot) {
-      return !cards.isEmpty();
+      while (!reviewCards.isEmpty()) {
+        ReviewCard rc = reviewCards.peek();
+        if (!cards.containsKey(rc.getCid())) {
+          reviewCards.poll();
+        } else {
+          return true;
+        }
+      }
+      return false;
     }
   }
 
   public WordCard nextCard() {
     synchronized (syncRoot) {
-      final WordCard card = cards.pollFirst();
-      if (card == null) {
-        return null;
+      while (!reviewCards.isEmpty()) {
+        final ReviewCard rc = reviewCards.poll();
+        final WordCard card = cards.get(rc.getCid());
+        if (card == null) continue;
+        cards.remove(rc.getCid());
+        card.setStatus(1);
+        Scheduler.schedule(new Runnable() {
+          @Override
+          public void run() {
+            cardDao.updateRaw("UPDATE wordcard SET status = 1 WHERE id = ?", rc.getCid());
+          }
+        });
+        Log.d(this, String.format("Selected card %s <- %s", rc.getCid(), rc.getSource()));
+        return card;
       }
-      card.setStatus(1);
-      Scheduler.schedule(new Runnable() {
-        public void run() {
-          cardDao.update(card);
-        }
-      });
-      return card;
+      return null;
     }
   }
 
   private Random rand = new Random();
 
-  public synchronized void process(final Collection<WordCard> crds) {
-
+  public synchronized void process(final Collection<WordCard> crds, final Collection<ReviewCard> rcs) {
     long lid = rand.nextLong();
     for (WordCard card : crds) {
       card.setStatus(0);
@@ -101,14 +120,24 @@ public class CardService implements Purgeable {
       }
       cardDao.createIfNotExists(card);
     }
+    for (ReviewCard rc : rcs) {
+      Oid oid = new Oid((int) (rc.getSeq() >> 24), 0, (int) (rc.getSeq() & 0xfff));
+      rc.setId(oid.toString());
+      reviewDao.createIfNotExists(rc);
+    }
 
     reloadCards();
   }
 
   public void reloadCards() {
-    TreeSet<WordCard> crds = loadCards();
+    Map<String, WordCard> crds = loadCards();
+    PriorityQueue<ReviewCard> q = makeQueue();
+    List<ReviewCard> rcs = reviewDao.queryForAll();
+    q.addAll(rcs);
+
     synchronized (syncRoot) {
-      cards = crds;
+      this.cards = crds;
+      this.reviewCards = q;
     }
   }
 
@@ -127,8 +156,16 @@ public class CardService implements Purgeable {
   }
 
   private void dropCardsByIds(Collection<String> ids) {
-    removeLearningForCards(ids);
-    cardDao.deleteIds(ids);
+    try {
+      removeLearningForCards(ids);
+      cardDao.deleteIds(ids);
+      DeleteBuilder<ReviewCard, String> bldr = reviewDao.deleteBuilder();
+      bldr.where().in("cid", ids);
+      PreparedDelete<ReviewCard> stmt = bldr.prepare();
+      reviewDao.delete(stmt);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void removeStale() {
@@ -160,6 +197,7 @@ public class CardService implements Purgeable {
   public void clear() {
     cardDao.updateRaw("delete from wordcard where id not in (select e.id from markevent e where e.operation <> 0) and status <> 0");
     learningDao.updateRaw("delete from itemlearning where id not in (select c.id from wordcard c)");
+    reviewDao.updateRaw("delete from reviewcard where cid not in (select id from wordcard)");
   }
 
   public void drop(WordCard card) {
@@ -171,5 +209,6 @@ public class CardService implements Purgeable {
   public void purge() {
     learningDao.updateRaw("delete from wordcard");
     learningDao.updateRaw("delete from itemlearning");
+    reviewDao.updateRaw("delete from reviewcard");
   }
 }
