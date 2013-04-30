@@ -89,7 +89,7 @@ public class DataService extends OrmLiteBaseService<DatabaseHelper> {
     }
 
     esReg = new EventualSvcRegistry(this);
-    Scheduler.delayed(esReg, Duration.standardMinutes(1));
+    Scheduler.delayed(esReg, Duration.standardSeconds(30));
   }
 
   public void createRestSvc(AuthObject ao) {

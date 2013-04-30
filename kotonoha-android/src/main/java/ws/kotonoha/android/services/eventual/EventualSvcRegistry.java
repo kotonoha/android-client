@@ -15,8 +15,8 @@ public class EventualSvcRegistry implements Runnable {
 
   public EventualSvcRegistry(DataService svc) {
     Collections.addAll(svcs,
-      new SendMarksES(svc),
-      new SendChangeWordStatusES(svc)
+      new SendChangeWordStatusES(svc),
+      new SendMarksES(svc)
     );
   }
 
@@ -27,7 +27,7 @@ public class EventualSvcRegistry implements Runnable {
   @Override
   public synchronized void run() {
     Runnable r = null;
-
+    Log.d(this, "Executing eventual service registry");
     try {
       while (!svcs.isEmpty()) {
         final EventualService svc = svcs.poll();
@@ -45,12 +45,12 @@ public class EventualSvcRegistry implements Runnable {
     current.clear();
 
     if (r == null) {
-      Scheduler.delayed(this, Duration.standardSeconds(20));
+      Scheduler.delayed(this, Duration.standardSeconds(60));
     } else {
       Scheduler.schedule(r).doAfter(new Runnable() {
         @Override
         public void run() {
-          Scheduler.delayed(this, Duration.standardSeconds(20));
+          Scheduler.delayed(EventualSvcRegistry.this, Duration.standardSeconds(30));
         }
       });
     }
