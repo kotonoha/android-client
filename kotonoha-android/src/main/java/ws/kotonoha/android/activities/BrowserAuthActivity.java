@@ -8,6 +8,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import de.akquinet.android.androlog.Log;
+import ws.kotonoha.android.BuildConfig;
 import ws.kotonoha.android.R;
 import ws.kotonoha.android.util.ApiCodes;
 
@@ -19,7 +20,15 @@ import java.io.ByteArrayInputStream;
  */
 public class BrowserAuthActivity extends Activity {
 
-  private static final String url = "http://weaboo.net:9867/oauth/request";
+  private static final String url = loginUrl();
+
+  private static String loginUrl() {
+    if (BuildConfig.DEBUG) {
+      return "http://weaboo.net:9867/oauth/request";
+    } else {
+      return "http://kotonoha.ws/oauth/request";
+    }
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
