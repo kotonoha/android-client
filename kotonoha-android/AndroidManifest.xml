@@ -2,12 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="ws.kotonoha.android" android:versionCode="5"
           android:versionName="0.2.0-b3-wip">
-  <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="15"/>
+  <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="21"/>
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
   <application android:icon="@drawable/icon" android:label="@string/app_name">
-    <activity android:name="ws.kotonoha.android.activities.KotonohaMain" android:label="@string/app_name">
+    <activity android:name="ws.kotonoha.android.activities.KotonohaMain" android:label="@string/app_name" android:theme="@android:style/Theme.Holo">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
@@ -18,7 +18,7 @@
       </intent-filter>
     </activity>
 
-    <activity android:name=".activities.BrowserAuthActivity" android:label="Auth">
+    <activity android:name=".activities.BrowserAuthActivity" android:label="Auth" android:theme="@android:style/Theme.Holo">
       <intent-filter android:label="Login to Kotonoha" android:priority="65536">
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
@@ -29,19 +29,19 @@
       </intent-filter>
     </activity>
 
-    <activity android:name="ws.kotonoha.android.activities.WordFormActivity" android:label="@string/word_form_name">
+    <activity android:name="ws.kotonoha.android.activities.WordFormActivity" android:label="@string/word_form_name" android:theme="@android:style/Theme.Holo">
     </activity>
 
-    <activity android:name="ws.kotonoha.android.voice.VoiceRecognition" android:label="@string/voice_record_act_name">
+    <activity android:name="ws.kotonoha.android.voice.VoiceRecognition" android:label="@string/voice_record_act_name" android:theme="@android:style/Theme.Holo">
     </activity>
 
-    <activity android:name=".activities.SettingsActivity">
+    <activity android:name=".activities.SettingsActivity" android:theme="@android:style/Theme.Holo">
 
     </activity>
 
-    <service android:name="ws.kotonoha.android.services.DataService" label="Kotonoha Data Service">
+    <service android:name="ws.kotonoha.android.services.DataService" android:label="Kotonoha Data Service" android:theme="@android:style/Theme.Holo">
     </service>
 
-    <uses-library android:name="android.test.runner"/>
+    <!--<uses-library android:name="android.test.runner"/>-->
   </application>
 </manifest>

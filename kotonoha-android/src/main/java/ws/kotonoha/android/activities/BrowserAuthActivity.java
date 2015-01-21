@@ -23,11 +23,14 @@ public class BrowserAuthActivity extends Activity {
   private static final String url = loginUrl();
 
   private static String loginUrl() {
+    String url;
     if (BuildConfig.DEBUG) {
-      return "http://weaboo.net:9867/oauth/request";
+      url = "http://kotonoha.ws/oauth/request";
     } else {
-      return "http://kotonoha.ws/oauth/request";
+      url = "http://kotonoha.ws/oauth/request";
     }
+    Log.d("ws.kotonoha.android.auth", "Browser login url is: " + url);
+    return url;
   }
 
   @Override

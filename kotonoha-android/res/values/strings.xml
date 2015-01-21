@@ -13,8 +13,8 @@
   <string name="voice_record_act_name">Voice recognition form</string>
   <string name="login">Login</string>
   <string name="bad_card">Mark card as bad</string>
-  <string name="login_qr">Login via QR code</string>
-  <string name="login_browser">Login via browser</string>
+  <string name="login_qr">via QR code</string>
+  <string name="login_browser">via browser</string>
   <string name="login_form_message">
     You can login by using 2 ways to Kotonoha Android. Either go to
     Client Authorizations, create login info for android, press
